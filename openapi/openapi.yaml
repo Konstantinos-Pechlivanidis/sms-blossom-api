@@ -1,0 +1,1291 @@
+openapi: 3.1.0
+info:
+  title: SMS Blossom API
+  version: 1.0.0
+  description: >
+    REST API for Shopify SMS marketing app (Express, ESM).
+    Includes OAuth-driven backend, consent flows, discounts, reporting, webhooks, and GDPR.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.sms-blossom.com
+    description: Production API
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Public
+    description: Public App Proxy endpoints
+  - name: Discounts
+    description: Discount code management
+  - name: Settings
+    description: Shop settings and rules
+  - name: Automations
+    description: Automation rules and triggers
+  - name: Segments
+    description: Customer segmentation and filtering
+  - name: Campaigns
+    description: SMS campaign management
+  - name: Reports
+    description: Analytics and reporting
+  - name: Webhooks
+    description: Webhook endpoints
+  - name: GDPR
+    description: GDPR compliance endpoints
+  - name: Audit
+    description: Audit logging endpoints
+security: []
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness & readiness probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /public/storefront/consent:
+    post:
+      tags: [Public]
+      summary: Collect SMS consent via App Proxy
+      operationId: collectConsent
+      description: >
+        Validates App Proxy signature, normalizes phone to E.164, links/creates customer (PCD-safe),
+        updates Shopify SMS consent when allowed, and upserts local Contact.
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+          description: Shopify shop domain (added by App Proxy)
+        - in: query
+          name: timestamp
+          required: true
+          schema: { type: string }
+          description: App Proxy timestamp
+        - in: query
+          name: signature
+          required: true
+          schema: { type: string }
+          description: App Proxy HMAC
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConsentRequest' }
+      responses:
+        '200':
+          description: Consent accepted (Shopify push may be pending if PCD not approved)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConsentResponse' }
+        '401':
+          description: Invalid App Proxy signature
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Invalid payload or phone format
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /public/unsubscribe:
+    get:
+      tags: [Public]
+      summary: Public unsubscribe (App Proxy)
+      operationId: publicUnsubscribe
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: timestamp
+          required: true
+          schema: { type: string }
+        - in: query
+          name: signature
+          required: true
+          schema: { type: string }
+        - in: query
+          name: phone
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Confirmation HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Missing params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /public/back-in-stock/interest:
+    post:
+      tags: [Public]
+      summary: Register back-in-stock interest (App Proxy signed)
+      operationId: registerBackInStockInterest
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: timestamp
+          required: true
+          schema: { type: string }
+        - in: query
+          name: signature
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string }
+                inventoryItemId: { type: string }
+              required: [phone, inventoryItemId]
+      responses:
+        '200':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  id: { type: string }
+                  productMeta: { type: [object, 'null'] }
+        '401':
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: No consent for this contact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Missing or invalid params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Unknown shop or contact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /discounts:
+    post:
+      tags: [Discounts]
+      summary: Create a discount code (Shopify Admin GraphQL)
+      operationId: createDiscount
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiscountCreateRequest' }
+      responses:
+        '200':
+          description: Discount created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiscountCreateResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Code conflict
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /discounts/apply-url:
+    get:
+      tags: [Discounts]
+      summary: Build canonical apply URL for a code
+      operationId: buildApplyUrl
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: code
+          required: true
+          schema: { type: string }
+        - in: query
+          name: redirect
+          required: false
+          schema: { type: string, default: /cart }
+      responses:
+        '200':
+          description: URL built
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApplyUrlResponse' }
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get shop settings (rules, timezone)
+      operationId: getSettings
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Settings payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingsGetResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Settings]
+      summary: Update shop settings (quiet hours, caps, abandoned delay)
+      operationId: updateSettings
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SettingsPutRequest' }
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SettingsGetResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /automations:
+    get:
+      tags: [Automations]
+      summary: Read automations config
+      operationId: getAutomations
+      description: |
+        Includes abandoned checkout settings:
+        - `abandoned.delayMinutes`: inactivity window before SMS is sent (default 30)
+        - `abandoned.discountCode`: optional code appended to recovery URL
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Automations config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AutomationsResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    put:
+      tags: [Automations]
+      summary: Update automations config
+      operationId: updateAutomations
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AutomationsUpdateRequest' }
+      responses:
+        '200':
+          description: Updated automations config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AutomationsResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /segments:
+    post:
+      tags: [Segments]
+      summary: Create or update a Segment
+      operationId: createSegment
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                name: { type: string }
+                filterJson: { type: object }
+              required: [name, filterJson]
+      responses:
+        '200':
+          description: Segment upserted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  segment: { type: object }
+        '404':
+          description: Unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /segments/preview:
+    post:
+      tags: [Segments]
+      summary: Preview segment audience (count + sample)
+      operationId: previewSegment
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 25 }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filterJson: { type: object }
+      responses:
+        '200':
+          description: Count and sample returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  count: { type: integer }
+                  sample: { type: array, items: { type: object } }
+        '404':
+          description: Unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/snapshot:
+    post:
+      tags: [Campaigns]
+      summary: Snapshot audience from segment/filter into recipients
+      operationId: snapshotCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Snapshot done
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  total: { type: integer }
+                  inserted: { type: integer }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/estimate:
+    get:
+      tags: [Campaigns]
+      summary: Estimate cost/segments for pending recipients
+      operationId: estimateCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Estimate returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  recipients: { type: integer }
+                  perMessageSegments: { type: integer }
+                  totalSegments: { type: integer }
+                  estCost: { type: number }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/test-send:
+    post:
+      tags: [Campaigns]
+      summary: Test send to a specific phone (E.164)
+      operationId: testSendCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string }
+              required: [phone]
+      responses:
+        '200':
+          description: Test send result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  result: { type: object }
+        '404':
+          description: Unknown shop, campaign, or contact
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Missing phone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/send-now:
+    post:
+      tags: [Campaigns]
+      summary: Send to snapshotted audience (batched, throttled)
+      operationId: sendCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Send summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  sent: { type: integer }
+                  failed: { type: integer }
+                  skipped: { type: integer }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/attach-discount:
+    post:
+      tags: [Campaigns]
+      summary: Attach an existing Discount to a Campaign
+      operationId: attachDiscountToCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                discountId: { type: string }
+                code: { type: string }
+      responses:
+        '200':
+          description: Attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  campaignId: { type: string }
+                  discountId: { type: string }
+        '404':
+          description: Unknown shop, campaign, or discount
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/detach-discount:
+    post:
+      tags: [Campaigns]
+      summary: Detach discount from Campaign
+      operationId: detachDiscountFromCampaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Detached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/utm:
+    put:
+      tags: [Campaigns]
+      summary: Set UTM params for Campaign
+      operationId: setCampaignUtm
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  utm: { type: object }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /campaigns/{id}/apply-url:
+    get:
+      tags: [Campaigns]
+      summary: Preview campaign discount apply URL (UTM/shortlink)
+      operationId: getCampaignApplyUrl
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: redirect
+          schema: { type: string, default: '/checkout' }
+        - in: query
+          name: short
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: URL returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  url: { type: string }
+                  short: { type: [string, 'null'] }
+        '404':
+          description: Unknown shop or campaign
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Campaign has no discount
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /discounts/conflicts:
+    get:
+      tags: [Discounts]
+      summary: Advisory scan for active automatic discounts (possible conflicts)
+      operationId: getDiscountConflicts
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Active automatic discounts returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  automaticDiscounts: { type: array, items: { type: object } }
+        '400':
+          description: Missing shop or unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /reports/overview:
+    get:
+      tags: [Reports]
+      summary: Overview KPIs
+      operationId: getReportOverview
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: range
+          schema: { type: string, enum: [7d, 30d, 90d], default: 30d }
+      responses:
+        '200':
+          description: Overview metrics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportOverviewResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /reports/attribution:
+    get:
+      tags: [Reports]
+      summary: Revenue by discount code
+      operationId: getReportAttribution
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: range
+          schema: { type: string, enum: [7d, 30d, 90d], default: 30d }
+      responses:
+        '200':
+          description: Attribution items
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportAttributionResponse' }
+        '400':
+          description: Missing shop parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /reports/campaigns:
+    get:
+      tags: [Reports]
+      summary: Campaign attribution (revenue/orders via discount or UTM)
+      operationId: getCampaignAttribution
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: window
+          schema: { type: string, example: '30d' }
+      responses:
+        '200':
+          description: Campaign attribution list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  range:
+                    type: object
+                    properties:
+                      from: { type: string, format: date-time }
+                      to: { type: string, format: date-time }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        campaignId: { type: string }
+                        name: { type: string }
+                        revenue: { type: number }
+                        orders: { type: integer }
+                        via:
+                          type: object
+                          properties:
+                            discount: { type: integer }
+                            utm: { type: integer }
+                        clicks_lifetime: { type: integer }
+                        messaging:
+                          type: object
+                          properties:
+                            sent: { type: integer }
+                            delivered: { type: integer }
+                            failed: { type: integer }
+        '404':
+          description: Unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /reports/automations:
+    get:
+      tags: [Reports]
+      summary: Automation attribution (Abandoned Checkout revenue)
+      operationId: getAutomationAttribution
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: window
+          schema: { type: string, example: '30d' }
+      responses:
+        '200':
+          description: Automation attribution
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  range:
+                    type: object
+                    properties:
+                      from: { type: string, format: date-time }
+                      to: { type: string, format: date-time }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        automation: { type: string }
+                        orders: { type: integer }
+                        revenue: { type: number }
+        '404':
+          description: Unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /reports/messaging/timeseries:
+    get:
+      tags: [Reports]
+      summary: Messaging daily timeseries (sent/delivered/failed/cost)
+      operationId: getMessagingTimeseries
+      parameters:
+        - in: query
+          name: shop
+          required: true
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+        - in: query
+          name: window
+          schema: { type: string, example: '7d' }
+      responses:
+        '200':
+          description: Timeseries returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  range:
+                    type: object
+                    properties:
+                      from: { type: string, format: date-time }
+                      to: { type: string, format: date-time }
+                  series:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day: { type: string, format: date-time }
+                        sent: { type: integer }
+                        delivered: { type: integer }
+                        failed: { type: integer }
+                        cost: { type: number }
+        '404':
+          description: Unknown shop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /webhooks/shopify/{topic}:
+    post:
+      tags: [Webhooks]
+      summary: Shopify webhooks ingress (HMAC verified)
+      operationId: shopifyWebhook
+      parameters:
+        - in: path
+          name: topic
+          required: true
+          schema: { type: string }
+        - in: header
+          name: X-Shopify-Topic
+          schema: { type: string }
+        - in: header
+          name: X-Shopify-Hmac-Sha256
+          schema: { type: string }
+        - in: header
+          name: X-Shopify-Shop-Domain
+          schema: { type: string }
+      responses:
+        '200':
+          description: Accepted
+        '401':
+          description: Invalid HMAC signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /webhooks/mitto/dlr:
+    post:
+      tags: [Webhooks]
+      summary: Mitto delivery receipts
+      operationId: mittoDlr
+      parameters:
+        - in: query
+          name: mid
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Acknowledged
+        '400':
+          description: Missing mid parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /webhooks/mitto/inbound:
+    post:
+      tags: [Webhooks]
+      summary: Mitto inbound MO (STOP/UNSUB)
+      operationId: mittoInbound
+      responses:
+        '200':
+          description: Acknowledged
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /webhooks/gdpr/{topic}:
+    post:
+      tags: [GDPR]
+      summary: Shopify GDPR webhooks (HMAC verified)
+      operationId: gdprWebhook
+      parameters:
+        - in: path
+          name: topic
+          required: true
+          schema: { type: string, enum: [customers/data_request, customers/redact, shop/redact] }
+        - in: header
+          name: X-Shopify-Hmac-Sha256
+          schema: { type: string }
+        - in: header
+          name: X-Shopify-Shop-Domain
+          schema: { type: string }
+      responses:
+        '200':
+          description: Acknowledged
+        '401':
+          description: Invalid HMAC signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status: { type: string, example: ok }
+    ConsentRequest:
+      type: object
+      properties:
+        phone: { type: string, example: '+3069XXXXXXX' }
+        email: { type: string, example: 'user@example.com' }
+        optInLevel:
+          { type: string, enum: [SINGLE_OPT_IN, CONFIRMED_OPT_IN], default: SINGLE_OPT_IN }
+      required: [phone]
+    ConsentResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        phoneE164: { type: string, example: '+3069XXXXXXX' }
+        linkedToCustomer: { type: boolean, example: true }
+        shopifyPushPending: { type: boolean, example: false }
+        pcdApproved: { type: boolean, example: false }
+    DiscountCreateRequest:
+      type: object
+      properties:
+        code: { type: string, example: 'WELCOME10' }
+        title: { type: string }
+        kind: { type: string, enum: [percentage, amount] }
+        value: { type: number, example: 10 }
+        currencyCode: { type: string, example: 'EUR' }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        appliesOncePerCustomer: { type: boolean, default: true }
+        usageLimit: { type: integer }
+        redirect: { type: string, example: '/checkout' }
+        segments:
+          type: array
+          items: { type: string }
+      required: [code, kind, value]
+    DiscountCreateResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        code: { type: string, example: 'WELCOME10' }
+        title: { type: string }
+        id: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        applyUrl:
+          {
+            type: string,
+            example: 'https://shop.myshopify.com/discount/WELCOME10?redirect=%2Fcheckout',
+          }
+    ApplyUrlResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        url: { type: string }
+    SettingsGetResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        shop: { type: string, example: 'sms-blossom-dev.myshopify.com' }
+        settings:
+          type: object
+          properties:
+            timezone: { type: string, example: 'Europe/Athens' }
+            quietHours:
+              type: object
+              properties:
+                start: { type: integer, example: 21 }
+                end: { type: integer, example: 9 }
+            cap:
+              type: object
+              properties:
+                windowHours: { type: integer, example: 24 }
+                maxPerWindow: { type: integer, example: 1 }
+            abandoned:
+              type: object
+              properties:
+                delayMinutes: { type: integer, example: 30 }
+    SettingsPutRequest:
+      type: object
+      properties:
+        timezone: { type: string }
+        quietHours:
+          type: object
+          properties:
+            start: { type: integer }
+            end: { type: integer }
+          required: [start, end]
+        cap:
+          type: object
+          properties:
+            windowHours: { type: integer }
+            maxPerWindow: { type: integer }
+          required: [windowHours, maxPerWindow]
+        abandoned:
+          type: object
+          properties:
+            delayMinutes: { type: integer, minimum: 5, maximum: 1440 }
+    ReportOverviewResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        range: { type: string, example: '30d' }
+        contacts:
+          type: object
+          properties:
+            total: { type: integer }
+            optedIn: { type: integer }
+            optedOutRecent: { type: integer }
+        messages:
+          type: object
+          properties:
+            sent: { type: integer }
+            delivered: { type: integer }
+            failed: { type: integer }
+            deliveryRate: { type: number, format: float }
+        revenue:
+          type: object
+          properties:
+            attributed: { type: number, format: float }
+    ReportAttributionResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        range: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string }
+              orders: { type: integer }
+              revenue: { type: number, format: float }
+    AutomationRules:
+      type: object
+      properties:
+        quietHours:
+          type: object
+          properties:
+            enabled: { type: boolean }
+            start: { type: integer, minimum: 0, maximum: 23 }
+            end: { type: integer, minimum: 0, maximum: 23 }
+            zone: { type: [string, 'null'] }
+        frequencyCap:
+          type: object
+          properties:
+            enabled: { type: boolean }
+            per: { type: string, enum: [hour, day, week] }
+            max: { type: integer, minimum: 1 }
+        dedupeWindowMin: { type: integer, minimum: 0 }
+    AutomationConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        template: { type: [string, 'null'] }
+        delayMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        rules: { $ref: '#/components/schemas/AutomationRules' }
+    AutomationsResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        shop: { type: string }
+        automations:
+          type: object
+          properties:
+            orderPaid: { $ref: '#/components/schemas/AutomationConfig' }
+            abandoned: { $ref: '#/components/schemas/AutomationConfig' }
+            fulfillmentUpdate: { $ref: '#/components/schemas/AutomationConfig' }
+            welcome: { $ref: '#/components/schemas/AutomationConfig' }
+            backInStock: { $ref: '#/components/schemas/AutomationConfig' }
+    AutomationsUpdateRequest:
+      type: object
+      properties:
+        orderPaid: { $ref: '#/components/schemas/AutomationConfig' }
+        abandoned: { $ref: '#/components/schemas/AutomationConfig' }
+        fulfillmentUpdate: { $ref: '#/components/schemas/AutomationConfig' }
+        welcome: { $ref: '#/components/schemas/AutomationConfig' }
+        backInStock: { $ref: '#/components/schemas/AutomationConfig' }
+      additionalProperties: false
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        details: {}

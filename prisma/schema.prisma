@@ -1,0 +1,238 @@
+// Prisma schema for sms-blossom-api
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  domain       String   @unique
+  name         String?
+  tokenOffline String? // encrypted offline token (AES-GCM) gcm::<iv_b64>::<tag_b64>::<data_b64>
+  // Sprint B: settings & locale for rules
+  timezone     String?  // e.g., "Europe/Athens"
+  locale       String?  // e.g., "el-GR"
+  settingsJson Json?    // rules settings, etc.
+
+  contacts Contact[]
+  events   Event[]
+  messages Message[]
+  jobs     Job[]
+  discounts Discount[]
+  auditLogs AuditLog[]
+  backInStockInterests BackInStockInterest[]
+  shortlinks Shortlink[]
+  segments Segment[]
+  campaignRecipients CampaignRecipient[]
+  campaigns Campaign[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  shopId    String
+
+  customerId String? // Shopify Customer GID or numeric string (we keep as text)
+  phoneE164  String // normalized E.164 phone
+  firstName  String?
+  lastName   String?
+  email      String?
+  optedOut   Boolean @default(false)
+  // Sprint A: Consent + auditing fields
+  smsConsentState  String   @default("unknown") // "opted_in" | "opted_out" | "unknown"
+  smsConsentSource String?  // "checkout" | "thank_you" | "banner" | "inbound_stop" | "manual" | "gdpr"
+  smsConsentAt     DateTime?
+  unsubscribedAt   DateTime?
+  tagsJson         Json?
+  // Sprint D: mark welcome sent once
+  welcomedAt       DateTime?
+
+  Message    Message[]
+  backInStockInterests BackInStockInterest[]
+  campaignRecipients CampaignRecipient[]
+
+  @@unique([shopId, customerId])
+  @@unique([shopId, phoneE164], name: "shopId_phoneE164")
+  @@index([shopId, phoneE164])
+  @@index([shopId, email])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  shopId    String
+  topic     String
+  objectId  String?
+  raw       Json
+  dedupeKey String   @unique
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  shopId    String
+
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  contactId String?
+
+  body     String
+  provider String // mitto
+  status   String // queued, sent, delivered, failed
+  metadata Json?
+  // Sprint B: categorize messages so rules can filter quickly
+  kind      String  @default("automation") // automation|campaign|system
+  triggerKey String?
+
+  @@index([shopId, contactId])
+  @@index([shopId, contactId, triggerKey])
+}
+
+model Job {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId     String
+
+  type       String   @default("abandoned_checkout") // 'abandoned_checkout'
+  status     String   @default("pending") // pending|running|done|canceled|failed
+  runAt      DateTime
+  attempts   Int      @default(0)
+  lastError  String?
+  payload    Json
+  dedupeKey  String?  @unique
+
+  @@index([shopId, status, runAt])
+}
+
+model Discount {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId          String
+
+  code            String
+  type            String            // 'percentage' | 'amount' | 'shipping'
+  value           Decimal? @db.Decimal(10,2)
+  currencyCode    String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  usageLimit      Int?
+  oncePerCustomer Boolean? @default(true)
+  applyUrl        String?
+  providerId      String?          // Shopify CodeDiscountNode id or code handle
+  status          String?          // active|expired|scheduled
+  utmJson         Json?
+
+  @@index([shopId, code])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  shopId    String
+
+  actor     String   // "system" | "user" | "webhook"
+  action    String   // e.g. "consent.update", "consent.unsubscribe", "gdpr.data_request", "gdpr.redact"
+  entity    String   // "contact" | "shop" | "message" | ...
+  entityId  String?  // contact id, etc.
+  ip        String?
+  ua        String?
+  diffJson  Json?
+
+  @@index([shopId, createdAt])
+}
+
+model BackInStockInterest {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId          String
+  contact         Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId       String
+  // We key by InventoryItem ID (numeric) from webhooks for simplicity
+  inventoryItemId String
+  variantId       String?
+  productHandle   String?
+  lastNotifiedAt  DateTime?
+
+  @@unique([shopId, contactId, inventoryItemId])
+  @@index([shopId, inventoryItemId])
+}
+
+model Segment {
+  id                 String   @id @default(cuid())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  shop               Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId             String
+  name               String
+  filterJson         Json     // DSL like {and:[{consent:'opted_in'},{tags:{has:'vip'}}]}
+  lastMaterializedAt DateTime?
+
+  @@index([shopId, updatedAt])
+}
+
+model CampaignRecipient {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  campaignId  String
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId   String
+  status      String   @default("pending") // pending|sent|failed|skipped
+  reason      String?
+  messageId   String?
+  cost        Decimal? @db.Decimal(10,4)
+  segmentsUsed Int?
+
+  @@index([shopId, campaignId, status])
+  @@unique([campaignId, contactId])
+}
+
+model Shortlink {
+  slug        String   @id
+  createdAt   DateTime @default(now())
+  shop        Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  shopId      String?
+  url         String
+  campaignId  String?
+  clicks      Int      @default(0)
+  expiresAt   DateTime?
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  name        String
+  segmentId   String?
+  templateId  String?
+  templateKey String?
+  scheduleAt  DateTime?
+  status      String   @default("draft")
+  utmJson     Json?
+  batchSize   Int?
+  bodyText    String?
+  discountId  String?                                 // <—— Sprint F
+  // add an index for fast lookups
+  @@index([shopId, status, scheduleAt])
+}
