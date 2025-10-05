@@ -54,6 +54,34 @@ export async function cancelAbandonedCheckoutJobs({ shopId, checkoutId }) {
   return true;
 }
 
+// Generic job scheduler for GDPR and other job types
+export async function scheduleJob({ shopId, kind, key, runAt, payload }) {
+  const dedupeKey = key;
+  
+  // Check if job already exists and is pending
+  const existing = await prisma.job.findUnique({ where: { dedupeKey } }).catch(() => null);
+  if (existing && existing.status === 'pending') {
+    await prisma.job.update({
+      where: { id: existing.id },
+      data: { runAt, payload },
+    });
+    return existing.id;
+  }
+  
+  // Create new job
+  const row = await prisma.job.create({
+    data: {
+      shopId,
+      type: kind,
+      status: 'pending',
+      runAt,
+      payload,
+      dedupeKey,
+    },
+  });
+  return row.id;
+}
+
 async function executeAbandonedJob(job) {
   const { shopId, payload } = job;
   const shop = await prisma.shop.findUnique({ where: { id: shopId } });
@@ -98,6 +126,59 @@ async function executeAbandonedJob(job) {
   });
 }
 
+async function executeGDPRCustomerRedactJob(job) {
+  const { shopId, payload } = job;
+  
+  // Import GDPR service functions
+  const { redactCustomer } = await import('./gdpr.js');
+  
+  await redactCustomer({
+    shopId: payload.shopId,
+    customerId: payload.customerId,
+    email: payload.email,
+    phone: payload.phone,
+  });
+  
+  // Mark job as done
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { status: 'done', attempts: { increment: 1 } },
+  });
+  
+  await logAudit({
+    shopId,
+    actor: 'system',
+    action: 'gdpr.customer_redact.executed',
+    entity: 'job',
+    entityId: job.id,
+    diff: { payload },
+  });
+}
+
+async function executeGDPRShopRedactJob(job) {
+  const { shopId, payload } = job;
+  
+  // Import GDPR service functions
+  const { purgeShop } = await import('./gdpr.js');
+  
+  await purgeShop({ shopId: payload.shopId });
+  
+  // Mark job as done
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { status: 'done', attempts: { increment: 1 } },
+  });
+  
+  await logAudit({
+    shopId,
+    actor: 'system',
+    action: 'gdpr.shop_redact.executed',
+    entity: 'job',
+    entityId: job.id,
+    diff: { payload },
+  });
+}
+
 /**
  * Poller: checks for due pending jobs every N seconds and runs them.
  * Simple concurrency gate; fail-safe (doesn't crash server).
@@ -127,6 +208,10 @@ export function startScheduler({ intervalMs = 15000 } = {}) {
         try {
           if (job.type === 'abandoned_checkout') {
             await executeAbandonedJob(job);
+          } else if (job.type === 'gdpr_customer_redact') {
+            await executeGDPRCustomerRedactJob(job);
+          } else if (job.type === 'gdpr_shop_redact') {
+            await executeGDPRShopRedactJob(job);
           } else {
             // unknown job type → cancel
             await prisma.job.update({
@@ -145,4 +230,34 @@ export function startScheduler({ intervalMs = 15000 } = {}) {
       // swallow scheduler errors
     }
   }, intervalMs);
+}
+
+/**
+ * Boot function for scheduler initialization
+ * Called during server startup to set up the scheduler
+ */
+export async function schedulerBoot() {
+  // Initialize any required scheduler state
+  // This could include checking for stuck jobs, cleaning up old jobs, etc.
+  
+  // Clean up any stuck jobs that might be in 'running' state from previous runs
+  const stuckJobs = await prisma.job.findMany({
+    where: { status: 'running' },
+  });
+  
+  if (stuckJobs.length > 0) {
+    await prisma.job.updateMany({
+      where: { status: 'running' },
+      data: { status: 'pending' },
+    });
+  }
+  
+  // Clean up old completed/failed jobs (optional - keep for debugging)
+  const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+  await prisma.job.deleteMany({
+    where: {
+      status: { in: ['done', 'canceled', 'failed'] },
+      runAt: { lt: cutoffDate },
+    },
+  });
 }
