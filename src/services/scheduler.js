@@ -57,7 +57,7 @@ export async function cancelAbandonedCheckoutJobs({ shopId, checkoutId }) {
 // Generic job scheduler for GDPR and other job types
 export async function scheduleJob({ shopId, kind, key, runAt, payload }) {
   const dedupeKey = key;
-  
+
   // Check if job already exists and is pending
   const existing = await prisma.job.findUnique({ where: { dedupeKey } }).catch(() => null);
   if (existing && existing.status === 'pending') {
@@ -67,7 +67,7 @@ export async function scheduleJob({ shopId, kind, key, runAt, payload }) {
     });
     return existing.id;
   }
-  
+
   // Create new job
   const row = await prisma.job.create({
     data: {
@@ -128,23 +128,23 @@ async function executeAbandonedJob(job) {
 
 async function executeGDPRCustomerRedactJob(job) {
   const { shopId, payload } = job;
-  
+
   // Import GDPR service functions
   const { redactCustomer } = await import('./gdpr.js');
-  
+
   await redactCustomer({
     shopId: payload.shopId,
     customerId: payload.customerId,
     email: payload.email,
     phone: payload.phone,
   });
-  
+
   // Mark job as done
   await prisma.job.update({
     where: { id: job.id },
     data: { status: 'done', attempts: { increment: 1 } },
   });
-  
+
   await logAudit({
     shopId,
     actor: 'system',
@@ -157,18 +157,18 @@ async function executeGDPRCustomerRedactJob(job) {
 
 async function executeGDPRShopRedactJob(job) {
   const { shopId, payload } = job;
-  
+
   // Import GDPR service functions
   const { purgeShop } = await import('./gdpr.js');
-  
+
   await purgeShop({ shopId: payload.shopId });
-  
+
   // Mark job as done
   await prisma.job.update({
     where: { id: job.id },
     data: { status: 'done', attempts: { increment: 1 } },
   });
-  
+
   await logAudit({
     shopId,
     actor: 'system',
@@ -239,19 +239,19 @@ export function startScheduler({ intervalMs = 15000 } = {}) {
 export async function schedulerBoot() {
   // Initialize any required scheduler state
   // This could include checking for stuck jobs, cleaning up old jobs, etc.
-  
+
   // Clean up any stuck jobs that might be in 'running' state from previous runs
   const stuckJobs = await prisma.job.findMany({
     where: { status: 'running' },
   });
-  
+
   if (stuckJobs.length > 0) {
     await prisma.job.updateMany({
       where: { status: 'running' },
       data: { status: 'pending' },
     });
   }
-  
+
   // Clean up old completed/failed jobs (optional - keep for debugging)
   const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
   await prisma.job.deleteMany({
