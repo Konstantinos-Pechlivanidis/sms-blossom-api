@@ -2,7 +2,7 @@ import cors from 'cors';
 
 const allowlist = (process.env.CORS_ALLOWLIST || '')
   .split(',')
-  .map(s => s.trim())
+  .map((s) => s.trim())
   .filter(Boolean);
 
 export const corsMiddleware = cors({
@@ -18,5 +18,5 @@ export const corsMiddleware = cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['X-Request-Id'],
   credentials: true,
-  maxAge: 600
+  maxAge: 600,
 });
