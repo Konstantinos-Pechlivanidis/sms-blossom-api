@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import { corsMiddleware } from './middleware/cors.js';
 import { logger, httpLogger } from './lib/logger.js';
 import { requestId } from './middleware/requestId.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -28,6 +29,10 @@ import segmentsRouter from './routes/segments.js';
 import shortlinksRouter from './routes/shortlinks.js';
 
 const app = express();
+
+// CORS first (safe for preflight)
+app.use(corsMiddleware);
+app.options('*', corsMiddleware);
 
 // Basic env checks
 const required = ['APP_URL', 'DATABASE_URL'];
