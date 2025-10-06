@@ -26,7 +26,8 @@
     "depcheck": "depcheck --skip-missing true",
     "openapi:lint": "redocly lint openapi/openapi.yaml",
     "check": "npm run env:check && npm run lint && npm run format:check && npm run prisma:validate && npm run prisma:status && npm run test && npm run openapi:lint && npm run audit && npm run depcheck",
-    "seed:shop": "node src/scripts/seedShop.js"
+    "seed:shop": "node src/scripts/seedShop.js",
+    "build": "npm run prisma:generate && npx prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
