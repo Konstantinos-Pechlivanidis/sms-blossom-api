@@ -1,2 +1,6 @@
 node_modules
 .env
+
+# Single package manager: npm
+pnpm-lock.yaml
+yarn.lock
