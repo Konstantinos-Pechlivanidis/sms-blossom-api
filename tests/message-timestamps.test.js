@@ -79,7 +79,7 @@ describe('Message Timestamps Integration', () => {
 
   it('should handle null timestamps gracefully', async () => {
     // Create a message with null timestamps
-    const message = await prisma.message.create({
+    const _message = await prisma.message.create({
       data: {
         shopId: testShopId,
         contactId: testContactId,
