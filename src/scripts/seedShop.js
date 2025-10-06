@@ -154,17 +154,13 @@ async function seedMessages(shopId, contacts, n) {
         status,
         kind,
         triggerKey,
+        // Use actual timestamp fields instead of metadata
+        sentAt: status !== 'queued' ? new Date(Date.now() - randInt(1, 7) * 3600_000) : null,
+        deliveredAt: status === 'delivered' ? new Date() : null,
+        failedAt: status === 'failed' ? new Date() : null,
         metadata: {
           seeded: true,
-          // Add timing info to metadata since we don't have separate timestamp fields
-          ...(status !== 'queued' && {
-            sentAt: new Date(Date.now() - randInt(1, 7) * 3600_000).toISOString(),
-          }),
-          ...(status === 'delivered' && { deliveredAt: new Date().toISOString() }),
-          ...(status === 'failed' && {
-            failedAt: new Date().toISOString(),
-            errorCode: 'SEED_FAIL',
-          }),
+          ...(status === 'failed' && { errorCode: 'SEED_FAIL' }),
         },
       },
     });

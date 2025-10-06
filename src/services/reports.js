@@ -12,14 +12,10 @@ export async function getOverview({ shopId, from, to }) {
   const whereSent = { shopId, sentAt: { gte: from, lt: to } };
   const whereDelivered = { shopId, deliveredAt: { gte: from, lt: to } };
   const whereFailed = { shopId, failedAt: { gte: from, lt: to } };
-  const [sent, delivered, failed, cost] = await Promise.all([
+  const [sent, delivered, failed] = await Promise.all([
     prisma.message.count({ where: whereSent }),
     prisma.message.count({ where: whereDelivered }),
     prisma.message.count({ where: whereFailed }),
-    prisma.message.aggregate({
-      _sum: { cost: true },
-      where: { shopId, sentAt: { gte: from, lt: to } },
-    }),
   ]);
 
   const deliveryRate = sent ? delivered / sent : 0;
@@ -37,7 +33,7 @@ export async function getOverview({ shopId, from, to }) {
     delivered,
     failed,
     deliveryRate,
-    cost: Number(cost?._sum?.cost || 0),
+    cost: 0, // Cost tracking not implemented yet
     optIns: optedIn,
     optOuts: optedOut,
   };
@@ -198,14 +194,13 @@ export async function getAutomationAttribution({ shopId, from, to }) {
 export async function getMessagingTimeseries({ shopId, from, to }) {
   const rows = await prisma.$queryRaw`
     SELECT
-      date_trunc('day', "sentAt") AS day,
+      date_trunc('day', sent_at) AS day,
       count(*) FILTER (WHERE status='sent')       AS sent,
       count(*) FILTER (WHERE status='delivered')  AS delivered,
-      count(*) FILTER (WHERE status='failed')     AS failed,
-      coalesce(sum(cost),0)                       AS cost
+      count(*) FILTER (WHERE status='failed')     AS failed
     FROM "Message"
     WHERE "shopId" = ${shopId}
-      AND "sentAt" >= ${from} AND "sentAt" < ${to}
+      AND sent_at >= ${from} AND sent_at < ${to}
     GROUP BY 1
     ORDER BY 1 ASC
   `;
@@ -214,6 +209,6 @@ export async function getMessagingTimeseries({ shopId, from, to }) {
     sent: Number(r.sent || 0),
     delivered: Number(r.delivered || 0),
     failed: Number(r.failed || 0),
-    cost: Number(r.cost || 0),
+    cost: 0, // Cost tracking not implemented yet
   }));
 }
