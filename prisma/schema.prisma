@@ -94,8 +94,15 @@ model Message {
   kind      String  @default("automation") // automation|campaign|system
   triggerKey String?
 
+  // Message delivery timestamps
+  sentAt      DateTime? @map("sent_at")
+  deliveredAt DateTime? @map("delivered_at")
+  failedAt    DateTime? @map("failed_at")
+
   @@index([shopId, contactId])
   @@index([shopId, contactId, triggerKey])
+  @@index([shopId, status, sentAt])
+  @@index([shopId, sentAt])
 }
 
 model Job {
