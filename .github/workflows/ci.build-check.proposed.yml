@@ -58,7 +58,6 @@ jobs:
 
       - name: OpenAPI lint
         run: npm run openapi:lint
-
 # Note: DATABASE_URL is only needed for:
 # - Integration tests (run locally with npm run test:integration)
 # - Database migrations (run in deploy workflow with npm run build:deploy)

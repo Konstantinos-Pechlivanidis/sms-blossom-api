@@ -3,39 +3,46 @@
 ## FAILING STEPS ANALYSIS
 
 ### ✅ PASS: npm ci
+
 - **Status**: PASS
 - **Error**: None
 - **Root Cause**: N/A
 
-### ✅ PASS: npm run env:check  
+### ✅ PASS: npm run env:check
+
 - **Status**: PASS
 - **Error**: None
 - **Root Cause**: N/A
 
 ### ❌ FAIL: npm run lint
+
 - **Status**: FAIL
 - **Error**: 147 Prettier formatting errors
 - **Root Cause**: New test files and health.js have CRLF line endings and formatting issues
-- **Files Affected**: 
+- **Files Affected**:
   - `src/routes/health.js` (2 errors)
   - `tests/message-timestamps.test.js` (145 errors)
 
 ### ✅ PASS: npm run format:check (after fix)
+
 - **Status**: PASS (after running `npm run format`)
 - **Error**: None
 - **Root Cause**: Fixed by formatting
 
 ### ✅ PASS: npm run prisma:generate
+
 - **Status**: PASS
 - **Error**: None
 - **Root Cause**: N/A
 
 ### ✅ PASS: npm run prisma:validate
+
 - **Status**: PASS
 - **Error**: None
 - **Root Cause**: N/A
 
 ### ❌ FAIL: npm run test
+
 - **Status**: FAIL
 - **Error**: Database connection failures
 - **Root Cause**: Tests require live database connection
@@ -44,7 +51,8 @@
   - `Test timed out in 5000ms` (health test trying to start server)
 
 ### ❌ FAIL: npm run build
-- **Status**: FAIL  
+
+- **Status**: FAIL
 - **Error**: Database connection failure during migration
 - **Root Cause**: `prisma migrate deploy` requires live database
 - **Specific Error**: `P1001: Can't reach database server at localhost:5432`
@@ -52,11 +60,13 @@
 ## ROOT CAUSE ANALYSIS
 
 **PRIMARY ISSUE**: CI workflow runs database-dependent operations without a database
+
 - Tests import Prisma client and connect to database on import
 - Build script runs `prisma migrate deploy` which requires live database
 - Health test tries to start Express server which connects to database
 
 **SECONDARY ISSUE**: Formatting errors from new files
+
 - CRLF line endings in test files
 - Inconsistent formatting in health.js
 

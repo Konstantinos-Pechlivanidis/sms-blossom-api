@@ -3,6 +3,7 @@
 ## IMMEDIATE FIXES (High Priority)
 
 ### 1. Fix Formatting Issues
+
 ```bash
 npm run format
 git add .
@@ -10,7 +11,9 @@ git commit -m "fix: format new test files and health.js"
 ```
 
 ### 2. Update package.json Scripts
+
 **Add unit test script:**
+
 ```json
 {
   "scripts": {
@@ -25,6 +28,7 @@ git commit -m "fix: format new test files and health.js"
 ### 3. Add CI Guards to Database-Dependent Code
 
 **File: `src/db/prismaClient.js`**
+
 ```javascript
 // Add at top of file
 const isCI = process.env.CI === 'true';
@@ -44,6 +48,7 @@ export function getPrismaClient() {
 ```
 
 **File: `src/routes/health.js`**
+
 ```javascript
 // Add CI guard for database check
 if (process.env.CI === 'true') {
@@ -54,6 +59,7 @@ if (process.env.CI === 'true') {
 ```
 
 **File: `tests/message-timestamps.test.js`**
+
 ```javascript
 // Add at top of file
 const isCI = process.env.CI === 'true';
@@ -71,6 +77,7 @@ if (isCI) {
 ```
 
 **File: `tests/health.test.js`**
+
 ```javascript
 // Add CI guard
 const isCI = process.env.CI === 'true';
@@ -89,6 +96,7 @@ if (isCI) {
 ### 4. Update CI Workflow
 
 **File: `.github/workflows/ci.yml`**
+
 ```yaml
 name: CI
 on:
@@ -134,6 +142,7 @@ jobs:
 ## DEPLOYMENT WORKFLOW (Separate)
 
 **File: `.github/workflows/deploy.yml`**
+
 ```yaml
 name: Deploy
 on:
@@ -161,11 +170,13 @@ jobs:
 ## TESTING STRATEGY
 
 ### Unit Tests (CI)
+
 - `tests/rules.test.js` ✅
 - `tests/discounts.test.js` ✅
 - No database dependencies
 
 ### Integration Tests (Local/Staging)
+
 - `tests/health.test.js` (requires server)
 - `tests/message-timestamps.test.js` (requires database)
 - Run with: `npm run test:integration`
@@ -173,12 +184,14 @@ jobs:
 ## VERIFICATION STEPS
 
 1. **Local CI reproduction:**
+
    ```bash
    CI=true npm run test:unit
    CI=true npm run build
    ```
 
 2. **Format check:**
+
    ```bash
    npm run format:check
    ```
@@ -191,8 +204,9 @@ jobs:
 ## ROLLBACK PLAN
 
 If issues arise:
+
 1. Revert package.json script changes
-2. Revert CI workflow changes  
+2. Revert CI workflow changes
 3. Revert database guard changes
 4. Run `npm run format` to fix formatting
 
