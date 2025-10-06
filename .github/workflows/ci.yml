@@ -32,5 +32,10 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run prisma:validate
+        env:
+          DATABASE_URL: postgres://user:pass@localhost/db
       - run: npm run test
+        env:
+          DATABASE_URL: postgres://user:pass@localhost/db
+          NODE_ENV: test
       - run: npm run openapi:lint
