@@ -1,0 +1,65 @@
+name: CI / build-and-check
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Environment check
+        run: npm run env:check
+        env:
+          APP_URL: https://example.test
+          PORT: 8080
+          DATABASE_URL: postgres://user:pass@localhost/db
+          SHOPIFY_API_KEY: test
+          SHOPIFY_API_SECRET: test
+          SHOPIFY_SCOPES: read_customers,write_customers
+          WEBHOOK_SECRET: test
+          JWT_SECRET: this_is_long_enough_for_ci_only
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+          MITTO_API_URL: https://example.test
+          MITTO_API_KEY: test
+          QUEUE_DRIVER: memory
+          NODE_ENV: test
+          CI: true
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+      - name: OpenAPI lint
+        run: npm run openapi:lint
+
+# Note: DATABASE_URL is only needed for:
+# - Integration tests (run locally with npm run test:integration)
+# - Database migrations (run in deploy workflow with npm run build:deploy)
+# - Production deployment (handled by separate deploy workflow)

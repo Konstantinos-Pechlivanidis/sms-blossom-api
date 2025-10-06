@@ -7,7 +7,7 @@ const prisma = getPrismaClient();
 router.get('/', async (req, res) => {
   const db = await checkDatabaseHealthy();
   const queue = process.env.QUEUE_DRIVER || 'memory';
-  
+
   // Verify message timestamp fields work (prevent 42703 errors)
   let messageTimestamps = false;
   try {
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
     // Log error but don't fail health check
     console.warn('Message timestamp fields check failed:', error.message);
   }
-  
+
   res.json({ status: 'ok', db, queue, messageTimestamps });
 });
 
