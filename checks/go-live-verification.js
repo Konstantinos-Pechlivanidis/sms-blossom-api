@@ -3,8 +3,8 @@
 
 import {
   createWebhookPayload,
-  createSignedAppProxyUrl,
-  createJwtToken,
+  createSignedAppProxyUrl as _createSignedAppProxyUrl,
+  createJwtToken as _createJwtToken,
   TEST_WEBHOOK_PAYLOADS,
   TEST_TEMPLATE_PAYLOADS,
 } from './signed-requests.js';

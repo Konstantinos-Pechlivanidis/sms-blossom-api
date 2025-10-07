@@ -32,7 +32,7 @@ export function money(value, currency = 'USD', locale = 'en-US') {
  * @param {string} locale - Locale for formatting (default: en-US)
  * @returns {string} Formatted date
  */
-export function date(value, format = 'short', timezone = 'UTC', locale = 'en-US') {
+export function date(value, format = 'MMM d, yyyy', timezone = 'UTC', locale = 'en-US') {
   if (!value) return '';
 
   let dateValue;
@@ -114,7 +114,17 @@ export function truncate(value, length = 50, suffix = '...') {
 
   if (value.length <= length) return value;
 
-  return value.substring(0, length - suffix.length) + suffix;
+  // Find the last space before the truncation point to avoid cutting words
+  let truncateAt = length;
+  if (value.charAt(length) !== ' ') {
+    const lastSpace = value.lastIndexOf(' ', length);
+    if (lastSpace > length * 0.5) {
+      // Only use last space if it's not too far back
+      truncateAt = lastSpace;
+    }
+  }
+
+  return value.substring(0, truncateAt) + suffix;
 }
 
 /**
@@ -151,6 +161,11 @@ function getDateOptions(format) {
     time: { timeStyle: 'short' },
     datetime: { dateStyle: 'short', timeStyle: 'short' },
     iso: { dateStyle: 'short', timeStyle: 'short' },
+    'MMM d, yyyy': {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    },
   };
 
   return formatMap[format] || { dateStyle: 'short' };

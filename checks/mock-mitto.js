@@ -2,7 +2,7 @@
 // Mock Mitto SMS API for testing
 
 import express from 'express';
-import crypto from 'crypto';
+import _crypto from 'crypto';
 
 const app = express();
 const PORT = process.env.MOCK_MITTO_PORT || 3001;
@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Mock SMS sending
 app.post('/api/sendSms', (req, res) => {
-  const { to, text, from } = req.body;
+  const { to: _to, text: _text, from: _from } = req.body;
 
   // Simulate successful send
   const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -29,7 +29,7 @@ app.post('/api/sendSms', (req, res) => {
 
 // Mock DLR (Delivery Receipt) webhook
 app.post('/webhooks/dlr', (req, res) => {
-  const { messageId, status, timestamp } = req.body;
+  const { messageId, status, timestamp: _timestamp } = req.body;
 
   // Simulate DLR processing
   console.log(`DLR received: ${messageId} - ${status}`);
@@ -38,7 +38,7 @@ app.post('/webhooks/dlr', (req, res) => {
 
 // Mock inbound SMS webhook
 app.post('/webhooks/inbound', (req, res) => {
-  const { from, text, timestamp } = req.body;
+  const { from, text, timestamp: _timestamp } = req.body;
 
   // Simulate inbound message processing
   console.log(`Inbound SMS: ${from} - ${text}`);

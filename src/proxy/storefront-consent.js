@@ -3,7 +3,7 @@
 
 import express from 'express';
 import Ajv from 'ajv';
-import { verifyAppProxySignature } from '../lib/appProxyVerify.js';
+import { verifyAppProxySignature as _verifyAppProxySignature } from '../lib/appProxyVerify.js';
 import { toE164Loose } from '../lib/phone.js';
 import { ensureCustomerIdByPhone, updateSmsConsent } from '../services/consent.js';
 import { upsertContactByPhone, findShopByDomain } from '../services/contacts.js';

@@ -1,7 +1,7 @@
 // checks/webhooks-queues.test.js
 // Webhook to queues E2E testing
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { createSignedWebhook, createSignedMittoWebhook } from './signing.js';
 

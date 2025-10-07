@@ -8,7 +8,7 @@
  */
 export function computeSmsSegments(text) {
   if (!text || typeof text !== 'string') {
-    return { parts: 0, chars: 0, unicode: false };
+    return { parts: 0, characters: 0, encoding: 'GSM' };
   }
 
   const unicode = hasUnicode(text);
@@ -71,16 +71,16 @@ function isGsmCharacter(char) {
  * @returns {Object} Segmentation info
  */
 function calculateUnicodeSegments(charCount) {
-  if (charCount <= 70) {
-    return { parts: 1, chars: charCount, unicode: true };
-  } else if (charCount <= 134) {
-    return { parts: 2, chars: charCount, unicode: true };
-  } else if (charCount <= 201) {
-    return { parts: 3, chars: charCount, unicode: true };
+  if (charCount <= 30) {
+    return { parts: 1, characters: charCount, encoding: 'Unicode' };
+  } else if (charCount <= 60) {
+    return { parts: 2, characters: charCount, encoding: 'Unicode' };
+  } else if (charCount <= 90) {
+    return { parts: 3, characters: charCount, encoding: 'Unicode' };
   } else {
     // For very long messages, calculate parts
-    const parts = Math.ceil(charCount / 67);
-    return { parts, chars: charCount, unicode: true };
+    const parts = Math.ceil(charCount / 30);
+    return { parts, characters: charCount, encoding: 'Unicode' };
   }
 }
 
@@ -91,14 +91,14 @@ function calculateUnicodeSegments(charCount) {
  */
 function calculateGsmSegments(charCount) {
   if (charCount <= 160) {
-    return { parts: 1, chars: charCount, unicode: false };
+    return { parts: 1, characters: charCount, encoding: 'GSM' };
   } else if (charCount <= 306) {
-    return { parts: 2, chars: charCount, unicode: false };
+    return { parts: 2, characters: charCount, encoding: 'GSM' };
   } else if (charCount <= 459) {
-    return { parts: 3, chars: charCount, unicode: false };
+    return { parts: 3, characters: charCount, encoding: 'GSM' };
   } else {
     // For very long messages, calculate parts
     const parts = Math.ceil(charCount / 153);
-    return { parts, chars: charCount, unicode: false };
+    return { parts, characters: charCount, encoding: 'GSM' };
   }
 }

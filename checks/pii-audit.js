@@ -2,7 +2,7 @@
 // PII encryption audit script
 
 import { prisma } from '../src/db/prismaClient.js';
-import { decryptPII, hashDeterministic } from '../src/lib/encryption.js';
+import { decryptPII as _decryptPII, hashDeterministic } from '../src/lib/encryption.js';
 import { normalizePhone, normalizeEmail } from '../src/lib/normalization.js';
 
 async function auditPIIEncryption() {
@@ -125,17 +125,17 @@ async function checkEncryptionCoverage() {
 async function testEncryptionDecryption() {
   try {
     // Test encryption/decryption roundtrip
-    const testPhone = '+306912345678';
-    const testEmail = 'test@example.com';
+    const _testPhone = '+306912345678';
+    const _testEmail = 'test@example.com';
 
-    const encrypted = {
+    const _encrypted = {
       phone_ciphertext: { ciphertext: 'test', iv: 'test', tag: 'test' },
       email_ciphertext: { ciphertext: 'test', iv: 'test', tag: 'test' },
     };
 
     // Test hash consistency
-    const hash1 = hashDeterministic(testPhone);
-    const hash2 = hashDeterministic(testPhone);
+    const hash1 = hashDeterministic(_testPhone);
+    const hash2 = hashDeterministic(_testPhone);
     const hashConsistency = hash1 === hash2;
 
     // Test normalization

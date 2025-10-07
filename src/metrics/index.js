@@ -1,11 +1,12 @@
 // src/metrics/index.js
 // Prometheus metrics collection and registry
 
-import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
+import client from 'prom-client';
 import { logger } from '../lib/logger.js';
 
 // Configure default metrics collection
-collectDefaultMetrics({
+const register = new client.Registry();
+client.collectDefaultMetrics({
   register,
   prefix: 'sms_blossom_',
   gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
@@ -13,68 +14,68 @@ collectDefaultMetrics({
 });
 
 // Custom metrics for SMS Blossom
-const smsSendAttempts = new Counter({
+const smsSendAttempts = new client.Counter({
   name: 'sms_send_attempts_total',
   help: 'Total number of SMS send attempts',
   labelNames: ['provider', 'status'],
 });
 
-const smsDeliverySuccess = new Counter({
+const smsDeliverySuccess = new client.Counter({
   name: 'sms_delivery_success_total',
   help: 'Total number of successful SMS deliveries',
   labelNames: ['provider'],
 });
 
-const smsDeliveryFailure = new Counter({
+const smsDeliveryFailure = new client.Counter({
   name: 'sms_delivery_failure_total',
   help: 'Total number of failed SMS deliveries',
   labelNames: ['provider', 'error_type'],
 });
 
-const webhookEvents = new Counter({
+const webhookEvents = new client.Counter({
   name: 'webhook_events_total',
   help: 'Total number of webhook events received',
   labelNames: ['topic', 'status'],
 });
 
-const queueJobs = new Counter({
+const queueJobs = new client.Counter({
   name: 'queue_jobs_total',
   help: 'Total number of queue jobs processed',
   labelNames: ['queue', 'status'],
 });
 
-const queueJobDuration = new Histogram({
+const queueJobDuration = new client.Histogram({
   name: 'queue_job_duration_seconds',
   help: 'Duration of queue job processing in seconds',
   labelNames: ['queue', 'status'],
   buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
 });
 
-const rateLimitHits = new Counter({
+const rateLimitHits = new client.Counter({
   name: 'rate_limit_hits_total',
   help: 'Total number of rate limit hits',
   labelNames: ['endpoint', 'ip'],
 });
 
-const cacheHits = new Counter({
+const cacheHits = new client.Counter({
   name: 'cache_hits_total',
   help: 'Total number of cache hits',
   labelNames: ['cache_type'],
 });
 
-const cacheMisses = new Counter({
+const cacheMisses = new client.Counter({
   name: 'cache_misses_total',
   help: 'Total number of cache misses',
   labelNames: ['cache_type'],
 });
 
-const activeConnections = new Gauge({
+const activeConnections = new client.Gauge({
   name: 'active_connections',
   help: 'Number of active connections',
   labelNames: ['type'],
 });
 
-const piiCoverage = new Gauge({
+const piiCoverage = new client.Gauge({
   name: 'pii_coverage_percentage',
   help: 'Percentage of PII data that is encrypted',
   labelNames: ['data_type'],

@@ -1,7 +1,7 @@
 // checks/contract.test.js
 // OpenAPI contract validation tests
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import fs from 'fs';
 import yaml from 'js-yaml';
@@ -10,17 +10,17 @@ import yaml from 'js-yaml';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
 
 describe('OpenAPI Contract Validation', () => {
-  let openapiSpec;
-  let app;
+  let _openapiSpec;
+  let _app;
 
   beforeAll(async () => {
     // Load OpenAPI spec
     try {
       const specContent = fs.readFileSync('openapi/openapi.yaml', 'utf8');
-      openapiSpec = yaml.load(specContent);
+      _openapiSpec = yaml.load(specContent);
     } catch (error) {
       console.warn('Could not load OpenAPI spec:', error.message);
-      openapiSpec = {};
+      _openapiSpec = {};
     }
   });
 

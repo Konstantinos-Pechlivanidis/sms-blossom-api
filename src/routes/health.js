@@ -32,9 +32,9 @@ async function checkDatabaseHealth() {
       'Database health check',
     );
     return { ok: true, latency_ms: latency };
-  } catch ({ error, latency }) {
-    logger.warn({ error: error.message, latency_ms: latency }, 'Database health check failed');
-    return { ok: false, latency_ms: latency };
+  } catch ({ error, latency: _latency }) {
+    logger.warn({ error: error.message, latency_ms: _latency }, 'Database health check failed');
+    return { ok: false, latency_ms: _latency };
   }
 }
 
@@ -52,7 +52,7 @@ async function checkRedisHealthWithTimeout() {
 // PII coverage check with timeout
 async function checkPiiCoverage() {
   try {
-    const { result, latency } = await withTimeout(
+    const { result, latency: _latency } = await withTimeout(
       Promise.all([
         prisma.$queryRaw`SELECT COUNT(*) as total, COUNT(phone_ciphertext) as encrypted FROM "Contact"`,
         prisma.$queryRaw`SELECT COUNT(*) as total, COUNT(email_ciphertext) as encrypted FROM "Contact"`,

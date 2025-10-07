@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { getPrismaClient } from '../db/prismaClient.js';
-import { verifyAppProxySignature } from '../lib/appProxyVerify.js';
+import { verifyAppProxySignature as _verifyAppProxySignature } from '../lib/appProxyVerify.js';
 import { toE164Loose } from '../lib/phone.js';
 import { upsertInterest } from '../services/back-in-stock.js';
 import { resolveByInventoryItem } from '../services/shopify-products.js';

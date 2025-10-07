@@ -2,7 +2,11 @@
 // Tests for security middleware (JWT, shop scoping, rate limiting)
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { jwtVerifyMiddleware, generateJwtToken, verifyJwtToken } from '../src/middleware/jwt.js';
+import {
+  jwtVerifyMiddleware,
+  generateJwtToken,
+  verifyJwtToken as _verifyJwtToken,
+} from '../src/middleware/jwt.js';
 import { shopScopingMiddleware } from '../src/middleware/shopScope.js';
 import { rateLimitMiddleware, checkRateLimit } from '../src/middleware/rateLimit.js';
 

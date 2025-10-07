@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { appProxyVerifyMiddleware } from '../src/middleware/appProxyVerify.js';
-import { verifyAppProxySignature } from '../src/lib/appProxyVerify.js';
+import { verifyAppProxySignature as _verifyAppProxySignature } from '../src/lib/appProxyVerify.js';
 
 // Mock the logger
 vi.mock('../src/lib/logger.js', () => ({

@@ -36,7 +36,7 @@ async function runPerformanceSmokeTest() {
 
   await Promise.all(promises);
 
-  const totalTime = performance.now() - startTime;
+  const _totalTime = performance.now() - startTime;
   const duration = Date.now() - results.startTime;
 
   // Calculate statistics
@@ -98,7 +98,7 @@ async function runWorker(endpoints, endTime, results) {
       if (!response.ok) {
         results.errors++;
       }
-    } catch (error) {
+    } catch {
       const latency = performance.now() - start;
       results.requests++;
       results.latencies.push(latency);

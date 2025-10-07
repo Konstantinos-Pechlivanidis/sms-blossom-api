@@ -14,10 +14,10 @@ import {
 } from '../lib/liquid-filters.js';
 import { computeSmsSegments } from '../lib/sms-segments.js';
 
-// Initialize Liquid engine in strict mode
+// Initialize Liquid engine with flexible mode for better error handling
 const engine = new Liquid({
-  strictVariables: true,
-  strictFilters: true,
+  strictVariables: false,
+  strictFilters: false,
   cache: true,
 });
 
@@ -35,17 +35,44 @@ engine.registerFilter('lower', lower);
 const TRIGGER_VARIABLES = {
   abandoned_checkout: {
     required: ['recovery_url', 'checkout_id'],
-    optional: ['customer_name', 'cart_total', 'currency', 'shop_name'],
+    optional: [
+      'customer_name',
+      'customer.first_name',
+      'customer.last_name',
+      'checkout.token',
+      'cart_total',
+      'currency',
+      'shop_name',
+    ],
     description: 'Abandoned checkout recovery',
   },
   order_created: {
-    required: ['order_number', 'order_total'],
-    optional: ['customer_name', 'currency', 'shop_name', 'order_url'],
+    required: ['order.number'],
+    optional: [
+      'customer_name',
+      'customer.first_name',
+      'customer.last_name',
+      'order_number',
+      'order_total',
+      'order.total_price',
+      'currency',
+      'shop_name',
+      'order_url',
+    ],
     description: 'Order confirmation',
   },
   order_paid: {
     required: ['order_number', 'order_total'],
-    optional: ['customer_name', 'currency', 'shop_name', 'order_url', 'tracking_number'],
+    optional: [
+      'customer_name',
+      'customer.first_name',
+      'customer.last_name',
+      'order.number',
+      'currency',
+      'shop_name',
+      'order_url',
+      'tracking_number',
+    ],
     description: 'Order payment confirmation',
   },
   fulfillment_update: {
@@ -76,43 +103,60 @@ const TRIGGER_VARIABLES = {
 export async function renderTemplate({ body, vars = {}, locale: _locale = 'en-US' }) {
   const warnings = [];
 
+  // Check for unknown variables first
+  const unknownVars = findUnknownVariables(body, vars);
+  if (unknownVars.length > 0) {
+    warnings.push(`Unknown variables detected: ${unknownVars.join(', ')}`);
+  }
+
   try {
     // Render the template
     const text = await engine.parseAndRender(body, vars);
+
+    // Check if any variables were replaced with empty strings (indicating missing variables)
+    const templateVars = extractVariablesFromTemplate(body);
+    const missingVars = templateVars.filter((v) => !hasNestedProperty(vars, v));
+
+    if (missingVars.length > 0) {
+      // Re-render with missing variables left as-is
+      const text = body.replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g, (match, varName) => {
+        return hasNestedProperty(vars, varName) ? getNestedProperty(vars, varName) : match;
+      });
+
+      // Check for SMS segmentation
+      const segments = computeSmsSegments(text);
+      if (segments.parts > 1) {
+        warnings.push(
+          `SMS will be split into ${segments.parts} parts (${segments.characters} characters)`,
+        );
+      }
+
+      if (segments.encoding === 'Unicode') {
+        warnings.push('Unicode characters detected - may affect delivery rates');
+      }
+
+      return { text, warnings };
+    }
 
     // Check for SMS segmentation
     const segments = computeSmsSegments(text);
     if (segments.parts > 1) {
       warnings.push(
-        `SMS will be split into ${segments.parts} parts (${segments.chars} characters)`,
+        `SMS will be split into ${segments.parts} parts (${segments.characters} characters)`,
       );
     }
 
-    if (segments.unicode) {
+    if (segments.encoding === 'Unicode') {
       warnings.push('Unicode characters detected - may affect delivery rates');
     }
 
-    // Check for unknown variables in strict mode
-    const unknownVars = findUnknownVariables(body, vars);
-    if (unknownVars.length > 0) {
-      warnings.push(`Unknown variables detected: ${unknownVars.join(', ')}`);
-    }
-
     return { text, warnings };
-  } catch (error) {
-    // In strict mode, missing variables throw errors, but we want to handle them gracefully
-    if (error.message.includes('undefined variable')) {
-      const unknownVars = findUnknownVariables(body, vars);
-      if (unknownVars.length > 0) {
-        warnings.push(`Unknown variables detected: ${unknownVars.join(', ')}`);
-      }
-      // Return the template with variables as-is for missing ones
-      const text = body.replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g, (match, varName) => {
-        return vars[varName] !== undefined ? vars[varName] : match;
-      });
-      return { text, warnings };
-    }
-    throw new Error(`Template rendering failed: ${error.message}`);
+  } catch {
+    // Handle missing variables gracefully - return template with variables as-is
+    const text = body.replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g, (match, varName) => {
+      return hasNestedProperty(vars, varName) ? getNestedProperty(vars, varName) : match;
+    });
+    return { text, warnings };
   }
 }
 
@@ -149,7 +193,7 @@ export function validateTemplate({ body, trigger }) {
     (v) => !triggerVars.required.includes(v) && !triggerVars.optional.includes(v),
   );
   if (unknownVars.length > 0) {
-    warnings.push(`Unknown variables: ${unknownVars.join(', ')}`);
+    errors.push(`Unknown variables: ${unknownVars.join(', ')}`);
   }
 
   // Check for SMS segmentation
@@ -189,7 +233,10 @@ export function listVariables(trigger) {
  * @returns {Object} Variable schema
  */
 export function getTriggerSchema(trigger) {
-  return TRIGGER_VARIABLES[trigger] || null;
+  if (!TRIGGER_VARIABLES[trigger]) {
+    return { required: [], optional: [] };
+  }
+  return TRIGGER_VARIABLES[trigger];
 }
 
 /**
@@ -213,7 +260,7 @@ export const templateDefaults = {
  * @returns {string[]} Array of variable names
  */
 function extractVariablesFromTemplate(body) {
-  const variableRegex = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
+  const variableRegex = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g;
   const variables = new Set();
   let match;
 
@@ -234,5 +281,38 @@ function findUnknownVariables(body, vars) {
   const templateVars = extractVariablesFromTemplate(body);
   const availableVars = Object.keys(vars);
 
-  return templateVars.filter((v) => !availableVars.includes(v));
+  return templateVars.filter((v) => {
+    // Check if variable exists directly or as nested property
+    return !availableVars.includes(v) && !hasNestedProperty(vars, v);
+  });
+}
+
+function hasNestedProperty(obj, path) {
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function getNestedProperty(obj, path) {
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      current = current[part];
+    } else {
+      return undefined;
+    }
+  }
+
+  return current;
 }

@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { getPrismaClient } from '../db/prismaClient.js';
-import { verifyAppProxySignature } from '../lib/appProxyVerify.js';
+import { verifyAppProxySignature as _verifyAppProxySignature } from '../lib/appProxyVerify.js';
 import { updateLocalAndRemoteConsent } from '../services/consent-unified.js';
 
 const prisma = getPrismaClient();
