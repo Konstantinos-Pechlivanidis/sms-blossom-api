@@ -1,0 +1,15 @@
+{
+  "message_id": "inbound_123456789",
+  "from": "+1234567890",
+  "to": "+1987654321",
+  "text": "HELP",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "provider": "mitto",
+  "inbound_message": {
+    "id": "inbound_123456789",
+    "from": "+1234567890",
+    "to": "+1987654321",
+    "text": "HELP",
+    "received_at": "2024-01-15T10:30:00Z"
+  }
+}

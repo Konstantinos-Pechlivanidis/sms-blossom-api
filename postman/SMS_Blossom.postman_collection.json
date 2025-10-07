@@ -1,0 +1,1194 @@
+{
+  "info": {
+    "name": "SMS Blossom API",
+    "description": "Complete API collection for SMS Blossom backend",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.sms-blossom.com",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shop_domain",
+      "value": "test-shop.myshopify.com",
+      "type": "string"
+    },
+    {
+      "key": "campaign_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "discount_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Get Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Readiness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health", "ready"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "Preview Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": \"Hello {{customer_name}}, your order #{{order_number}} is ready!\",\n  \"variables\": {\n    \"customer_name\": \"John Doe\",\n    \"order_number\": \"1001\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/preview",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "preview"]
+            }
+          }
+        },
+        {
+          "name": "Validate Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": \"Hello {{customer_name}}, your order #{{order_number}} is ready!\",\n  \"trigger\": \"order_created\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/validate",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Get Variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/templates/variables/abandoned_checkout",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "variables", "abandoned_checkout"]
+            }
+          }
+        },
+        {
+          "name": "Get Triggers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/templates/triggers",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "triggers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": ["{{base_url}}"],
+              "path": ["settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"America/New_York\",\n  \"quietHours\": {\n    \"start\": 22,\n    \"end\": 8\n  },\n  \"cap\": {\n    \"windowHours\": 24,\n    \"maxPerWindow\": 1\n  },\n  \"abandoned\": {\n    \"delayMinutes\": 30\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": ["{{base_url}}"],
+              "path": ["settings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Campaigns",
+      "item": [
+        {
+          "name": "List Campaigns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Campaign",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const response = pm.response.json();",
+                  "  pm.collectionVariables.set('campaign_id', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Welcome Campaign\",\n  \"template\": \"Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!\",\n  \"audience\": {\n    \"segment\": \"all\"\n  },\n  \"scheduled_at\": \"2024-01-16T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns"]
+            }
+          }
+        },
+        {
+          "name": "Get Campaign",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Campaign",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Welcome Campaign\",\n  \"template\": \"Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Campaign",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Estimate Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}/estimate",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}", "estimate"]
+            }
+          }
+        },
+        {
+          "name": "Test Send Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"variables\": {\n    \"customer_name\": \"John Doe\",\n    \"discount_code\": \"WELCOME10\",\n    \"discount_value\": \"10%\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}/test-send",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}", "test-send"]
+            }
+          }
+        },
+        {
+          "name": "Send Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/{{campaign_id}}/send",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "{{campaign_id}}", "send"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discounts",
+      "item": [
+        {
+          "name": "List Discounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts",
+              "host": ["{{base_url}}"],
+              "path": ["discounts"]
+            }
+          }
+        },
+        {
+          "name": "Create Discount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const response = pm.response.json();",
+                  "  pm.collectionVariables.set('discount_id', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"title\": \"Welcome Discount\",\n  \"type\": \"percentage\",\n  \"value\": 10,\n  \"currency_code\": \"USD\",\n  \"minimum_amount\": 50,\n  \"usage_limit\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts",
+              "host": ["{{base_url}}"],
+              "path": ["discounts"]
+            }
+          }
+        },
+        {
+          "name": "Get Discount",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts/{{discount_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "{{discount_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Discount",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Welcome Discount\",\n  \"value\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts/{{discount_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "{{discount_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Discount",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts/{{discount_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "{{discount_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Check Conflicts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts/conflicts",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "conflicts"]
+            }
+          }
+        },
+        {
+          "name": "Get Apply URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts/{{discount_id}}/apply-url",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "{{discount_id}}", "apply-url"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/overview?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "overview"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "to",
+                  "value": "2024-01-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Campaigns Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/campaigns?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "campaigns"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "to",
+                  "value": "2024-01-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Messaging Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/messaging?from=2024-01-01T00:00:00Z&to=2024-01-31T23:59:59Z&granularity=day",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "messaging"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "to",
+                  "value": "2024-01-31T23:59:59Z"
+                },
+                {
+                  "key": "granularity",
+                  "value": "day"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Queue Health",
+      "item": [
+        {
+          "name": "Get Queue Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/queue/health",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get Queue Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/queue/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Metrics",
+      "item": [
+        {
+          "name": "Get Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          }
+        },
+        {
+          "name": "Get JSON Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/metrics/json",
+              "host": ["{{base_url}}"],
+              "path": ["metrics", "json"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "App Proxy",
+      "item": [
+        {
+          "name": "Collect Consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"consent\": true,\n  \"source\": \"checkout\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/proxy/consent?shop={{shop_domain}}&timestamp={{$timestamp}}&signature={{signature}}",
+              "host": ["{{base_url}}"],
+              "path": ["proxy", "consent"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "timestamp",
+                  "value": "{{$timestamp}}"
+                },
+                {
+                  "key": "signature",
+                  "value": "{{signature}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Handle Unsubscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/proxy/unsubscribe?shop={{shop_domain}}&timestamp={{$timestamp}}&signature={{signature}}",
+              "host": ["{{base_url}}"],
+              "path": ["proxy", "unsubscribe"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "timestamp",
+                  "value": "{{$timestamp}}"
+                },
+                {
+                  "key": "signature",
+                  "value": "{{signature}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Back in Stock Interest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"inventoryItemId\": \"1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/proxy/back-in-stock/interest?shop={{shop_domain}}&timestamp={{$timestamp}}&signature={{signature}}",
+              "host": ["{{base_url}}"],
+              "path": ["proxy", "back-in-stock", "interest"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "timestamp",
+                  "value": "{{$timestamp}}"
+                },
+                {
+                  "key": "signature",
+                  "value": "{{signature}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Orders Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Topic",
+                "value": "orders/create",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Hmac-Sha256",
+                "value": "{{webhook_signature}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 123456789,\n  \"order_number\": 1001,\n  \"total_price\": \"99.99\",\n  \"currency\": \"USD\",\n  \"customer\": {\n    \"id\": 987654321,\n    \"email\": \"customer@example.com\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"phone\": \"+1234567890\"\n  },\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"shop_name\": \"test-shop\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/shopify/orders/create",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "shopify", "orders", "create"]
+            }
+          }
+        },
+        {
+          "name": "Orders Paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Topic",
+                "value": "orders/paid",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Hmac-Sha256",
+                "value": "{{webhook_signature}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 123456789,\n  \"order_number\": 1001,\n  \"total_price\": \"99.99\",\n  \"currency\": \"USD\",\n  \"financial_status\": \"paid\",\n  \"customer\": {\n    \"id\": 987654321,\n    \"email\": \"customer@example.com\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"phone\": \"+1234567890\"\n  },\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"processed_at\": \"2024-01-15T10:35:00Z\",\n  \"shop_name\": \"test-shop\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/shopify/orders/paid",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "shopify", "orders", "paid"]
+            }
+          }
+        },
+        {
+          "name": "Mitto DLR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Mitto-Signature",
+                "value": "{{mitto_signature}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message_id\": \"msg_123456789\",\n  \"status\": \"delivered\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"phone\": \"+1234567890\",\n  \"error_code\": null,\n  \"error_message\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/mitto/dlr",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "mitto", "dlr"]
+            }
+          }
+        },
+        {
+          "name": "Mitto Inbound",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Mitto-Signature",
+                "value": "{{mitto_signature}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{$randomUUID}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message_id\": \"inbound_123456789\",\n  \"from\": \"+1234567890\",\n  \"to\": \"+1987654321\",\n  \"text\": \"STOP\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/mitto/inbound",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "mitto", "inbound"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set default values if not already set",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "  pm.collectionVariables.set('base_url', 'https://api.sms-blossom.com');",
+          "}",
+          "if (!pm.collectionVariables.get('shop_domain')) {",
+          "  pm.collectionVariables.set('shop_domain', 'test-shop.myshopify.com');",
+          "}",
+          "",
+          "// Generate HMAC signatures for webhooks",
+          "const crypto = require('crypto');",
+          "",
+          "// Generate webhook signature",
+          "const webhookSecret = 'your-webhook-secret';",
+          "const webhookBody = pm.request.body.raw || '';",
+          "const webhookSignature = crypto.createHmac('sha256', webhookSecret).update(webhookBody).digest('base64');",
+          "pm.collectionVariables.set('webhook_signature', webhookSignature);",
+          "",
+          "// Generate Mitto signature",
+          "const mittoSecret = 'your-mitto-secret';",
+          "const mittoBody = pm.request.body.raw || '';",
+          "const mittoSignature = crypto.createHmac('sha256', mittoSecret).update(mittoBody).digest('hex');",
+          "pm.collectionVariables.set('mitto_signature', mittoSignature);",
+          "",
+          "// Generate App Proxy signature",
+          "const appProxySecret = 'your-app-proxy-secret';",
+          "const appProxyBody = pm.request.body.raw || '';",
+          "const appProxySignature = crypto.createHmac('sha256', appProxySecret).update(appProxyBody).digest('hex');",
+          "pm.collectionVariables.set('signature', appProxySignature);"
+        ]
+      }
+    }
+  ]
+}

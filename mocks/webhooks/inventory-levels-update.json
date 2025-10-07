@@ -1,0 +1,23 @@
+{
+  "id": 123456789,
+  "admin_graphql_api_id": "gid://shopify/InventoryLevel/123456789",
+  "inventory_item_id": 222222222,
+  "location_id": 333333333,
+  "available": 10,
+  "updated_at": "2024-01-15T10:30:00Z",
+  "product": {
+    "id": 444444444,
+    "title": "Amazing Product",
+    "handle": "amazing-product",
+    "variants": [
+      {
+        "id": 555555555,
+        "title": "Default Title",
+        "inventory_quantity": 10
+      }
+    ]
+  },
+  "shop_name": "test-shop",
+  "shop_domain": "test-shop.myshopify.com",
+  "test": false
+}

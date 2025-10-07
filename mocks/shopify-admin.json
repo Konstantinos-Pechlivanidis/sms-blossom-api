@@ -1,0 +1,230 @@
+{
+  "discounts": {
+    "create": {
+      "request": {
+        "query": "mutation discountCodeBasicCreate($basicCodeDiscount: DiscountCodeBasicInput!) { discountCodeBasicCreate(basicCodeDiscount: $basicCodeDiscount) { codeDiscountNode { id codeDiscount { ... on DiscountCodeBasic { title codes(first: 1) { nodes { code } } } } } userErrors { field message } } }",
+        "variables": {
+          "basicCodeDiscount": {
+            "title": "Welcome Discount",
+            "code": "WELCOME10",
+            "startsAt": "2024-01-15T00:00:00Z",
+            "endsAt": "2024-01-31T23:59:59Z",
+            "customerSelection": {
+              "all": true
+            },
+            "customerGets": {
+              "value": {
+                "percentage": 10
+              }
+            },
+            "minimumRequirement": {
+              "quantity": {
+                "greaterThanOrEqualToQuantity": 1
+              }
+            },
+            "usageLimit": 100
+          }
+        }
+      },
+      "response": {
+        "data": {
+          "discountCodeBasicCreate": {
+            "codeDiscountNode": {
+              "id": "gid://shopify/DiscountCodeNode/123456789",
+              "codeDiscount": {
+                "title": "Welcome Discount",
+                "codes": {
+                  "nodes": [
+                    {
+                      "code": "WELCOME10"
+                    }
+                  ]
+                }
+              }
+            },
+            "userErrors": []
+          }
+        }
+      }
+    },
+    "update": {
+      "request": {
+        "query": "mutation discountCodeBasicUpdate($id: ID!, $basicCodeDiscount: DiscountCodeBasicInput!) { discountCodeBasicUpdate(id: $id, basicCodeDiscount: $basicCodeDiscount) { codeDiscountNode { id codeDiscount { ... on DiscountCodeBasic { title codes(first: 1) { nodes { code } } } } } userErrors { field message } } }",
+        "variables": {
+          "id": "gid://shopify/DiscountCodeNode/123456789",
+          "basicCodeDiscount": {
+            "title": "Updated Welcome Discount",
+            "code": "WELCOME10",
+            "startsAt": "2024-01-15T00:00:00Z",
+            "endsAt": "2024-02-28T23:59:59Z",
+            "customerSelection": {
+              "all": true
+            },
+            "customerGets": {
+              "value": {
+                "percentage": 15
+              }
+            },
+            "minimumRequirement": {
+              "quantity": {
+                "greaterThanOrEqualToQuantity": 1
+              }
+            },
+            "usageLimit": 200
+          }
+        }
+      },
+      "response": {
+        "data": {
+          "discountCodeBasicUpdate": {
+            "codeDiscountNode": {
+              "id": "gid://shopify/DiscountCodeNode/123456789",
+              "codeDiscount": {
+                "title": "Updated Welcome Discount",
+                "codes": {
+                  "nodes": [
+                    {
+                      "code": "WELCOME10"
+                    }
+                  ]
+                }
+              }
+            },
+            "userErrors": []
+          }
+        }
+      }
+    },
+    "delete": {
+      "request": {
+        "query": "mutation discountCodeDelete($id: ID!) { discountCodeDelete(id: $id) { deletedId userErrors { field message } } }",
+        "variables": {
+          "id": "gid://shopify/DiscountCodeNode/123456789"
+        }
+      },
+      "response": {
+        "data": {
+          "discountCodeDelete": {
+            "deletedId": "gid://shopify/DiscountCodeNode/123456789",
+            "userErrors": []
+          }
+        }
+      }
+    },
+    "get": {
+      "request": {
+        "query": "query discountCode($id: ID!) { discountCode(id: $id) { id title codes(first: 1) { nodes { code } } } }",
+        "variables": {
+          "id": "gid://shopify/DiscountCodeNode/123456789"
+        }
+      },
+      "response": {
+        "data": {
+          "discountCode": {
+            "id": "gid://shopify/DiscountCodeNode/123456789",
+            "title": "Welcome Discount",
+            "codes": {
+              "nodes": [
+                {
+                  "code": "WELCOME10"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "list": {
+      "request": {
+        "query": "query discountCodes($first: Int!) { discountCodes(first: $first) { edges { node { id title codes(first: 1) { nodes { code } } } } } }",
+        "variables": {
+          "first": 10
+        }
+      },
+      "response": {
+        "data": {
+          "discountCodes": {
+            "edges": [
+              {
+                "node": {
+                  "id": "gid://shopify/DiscountCodeNode/123456789",
+                  "title": "Welcome Discount",
+                  "codes": {
+                    "nodes": [
+                      {
+                        "code": "WELCOME10"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "customers": {
+    "update": {
+      "request": {
+        "query": "mutation customerUpdate($input: CustomerInput!) { customerUpdate(input: $input) { customer { id email phone smsMarketingConsent { marketingState marketingOptInLevel customerUpdatedAt } } userErrors { field message } } }",
+        "variables": {
+          "input": {
+            "id": "gid://shopify/Customer/123456789",
+            "smsMarketingConsent": {
+              "marketingState": "SUBSCRIBED",
+              "marketingOptInLevel": "SINGLE_OPT_IN"
+            }
+          }
+        }
+      },
+      "response": {
+        "data": {
+          "customerUpdate": {
+            "customer": {
+              "id": "gid://shopify/Customer/123456789",
+              "email": "customer@example.com",
+              "phone": "+1234567890",
+              "smsMarketingConsent": {
+                "marketingState": "SUBSCRIBED",
+                "marketingOptInLevel": "SINGLE_OPT_IN",
+                "customerUpdatedAt": "2024-01-15T10:30:00Z"
+              }
+            },
+            "userErrors": []
+          }
+        }
+      }
+    }
+  },
+  "products": {
+    "get": {
+      "request": {
+        "query": "query product($id: ID!) { product(id: $id) { id title handle variants(first: 1) { edges { node { id title inventoryQuantity } } } } }",
+        "variables": {
+          "id": "gid://shopify/Product/123456789"
+        }
+      },
+      "response": {
+        "data": {
+          "product": {
+            "id": "gid://shopify/Product/123456789",
+            "title": "Amazing Product",
+            "handle": "amazing-product",
+            "variants": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "gid://shopify/ProductVariant/123456789",
+                    "title": "Default Title",
+                    "inventoryQuantity": 10
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

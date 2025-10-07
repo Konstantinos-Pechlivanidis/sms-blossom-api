@@ -1,0 +1,16 @@
+{
+  "message_id": "msg_123456789",
+  "status": "failed",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "phone": "+1234567890",
+  "error_code": "INVALID_PHONE",
+  "error_message": "Invalid phone number format",
+  "provider": "mitto",
+  "delivery_receipt": {
+    "id": "dlr_123456789",
+    "status": "failed",
+    "failed_at": "2024-01-15T10:30:00Z",
+    "cost": 0.00,
+    "currency": "USD"
+  }
+}
