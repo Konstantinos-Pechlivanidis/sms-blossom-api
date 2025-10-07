@@ -7,6 +7,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🚀 New Features
 
 #### 1. Enhanced Health and Readiness System
+
 - **New Endpoints**: `/health` and `/health/ready`
 - **Purpose**: System health monitoring and readiness probes
 - **Frontend Impact**: Use `/health` for system status, `/ready` for deployment readiness
@@ -25,6 +26,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 2. Queue Health Monitoring
+
 - **New Endpoint**: `/queue/health`
 - **Purpose**: Monitor BullMQ queue status and job counts
 - **Frontend Impact**: Use for operational dashboards and queue monitoring
@@ -41,6 +43,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 3. Prometheus Metrics
+
 - **New Endpoint**: `/metrics`
 - **Purpose**: System metrics for monitoring and alerting
 - **Frontend Impact**: Use for system monitoring dashboards
@@ -48,6 +51,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 - **Content-Type**: `text/plain; version=0.0.4`
 
 #### 4. Template System
+
 - **New Endpoints**: `/templates/*`
 - **Purpose**: Template preview, validation, and variable management
 - **Frontend Impact**: Enable rich template editing with Liquid support
@@ -58,6 +62,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   - Template validation
 
 #### 5. Campaigns and Discounts Services
+
 - **Enhanced Endpoints**: `/campaigns/*` and `/discounts/*`
 - **Purpose**: Complete campaign and discount management
 - **Frontend Impact**: Full CRUD operations for campaigns and discounts
@@ -70,6 +75,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🔧 API Changes
 
 #### 1. Authentication Headers
+
 - **Required**: `X-Shop-Domain` header for all requests
 - **Purpose**: Shop scoping and multi-tenant support
 - **Frontend Impact**: Include shop domain in all API calls
@@ -82,6 +88,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 2. Request ID Tracking
+
 - **Recommended**: `X-Request-ID` header for tracing
 - **Purpose**: Request correlation and debugging
 - **Frontend Impact**: Include unique request ID for better debugging
@@ -93,6 +100,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 3. Error Response Format
+
 - **Standardized**: Consistent error response structure
 - **Purpose**: Better error handling and user experience
 - **Frontend Impact**: Handle errors consistently across all endpoints
@@ -109,6 +117,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🛡️ Security Enhancements
 
 #### 1. Rate Limiting
+
 - **Implementation**: Token bucket algorithm with Redis
 - **Purpose**: API protection and abuse prevention
 - **Frontend Impact**: Handle 429 responses with retry logic
@@ -120,12 +129,14 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 2. CORS Configuration
+
 - **Implementation**: Strict allowlist-based CORS
 - **Purpose**: Cross-origin request security
 - **Frontend Impact**: Ensure frontend domain is in allowlist
 - **Configuration**: `CORS_ALLOWLIST` environment variable
 
 #### 3. HMAC Verification
+
 - **Implementation**: Shopify webhook and App Proxy HMAC
 - **Purpose**: Webhook authenticity and App Proxy security
 - **Frontend Impact**: Use proper HMAC for App Proxy requests
@@ -134,6 +145,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 📊 Caching and Performance
 
 #### 1. Redis Caching
+
 - **Implementation**: Reports caching with TTL
 - **Purpose**: Improved performance for frequently accessed data
 - **Frontend Impact**: Handle cache headers and implement client-side caching
@@ -144,6 +156,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
   ```
 
 #### 2. Database Optimizations
+
 - **Implementation**: Indexed queries and connection pooling
 - **Purpose**: Better database performance
 - **Frontend Impact**: Faster API responses
@@ -151,12 +164,14 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🔄 Queue System
 
 #### 1. BullMQ Integration
+
 - **Implementation**: Redis-based job queues
 - **Purpose**: Background job processing
 - **Frontend Impact**: Monitor queue health and job status
 - **Queues**: `events`, `automations`, `campaigns`, `delivery`, `housekeeping`
 
 #### 2. Job Processing
+
 - **Implementation**: Event-driven job processing
 - **Purpose**: Asynchronous task execution
 - **Frontend Impact**: Real-time updates for job status
@@ -164,6 +179,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 📱 SMS Provider Integration
 
 #### 1. Mitto SMS Provider
+
 - **Implementation**: Complete SMS provider integration
 - **Purpose**: SMS delivery and status tracking
 - **Frontend Impact**: Monitor SMS delivery status
@@ -176,12 +192,14 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🎯 Webhook System
 
 #### 1. Shopify Webhooks
+
 - **Implementation**: Complete webhook handling
 - **Purpose**: Real-time event processing
 - **Frontend Impact**: Real-time updates for Shopify events
 - **Topics**: `orders/create`, `orders/paid`, `checkouts/*`, `customers/*`, `inventory/*`
 
 #### 2. GDPR Compliance
+
 - **Implementation**: GDPR webhook handling
 - **Purpose**: Data privacy compliance
 - **Frontend Impact**: Handle customer data requests
@@ -190,12 +208,14 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🔍 Observability
 
 #### 1. Structured Logging
+
 - **Implementation**: Pino-based structured logging
 - **Purpose**: Better debugging and monitoring
 - **Frontend Impact**: Correlate frontend errors with backend logs
 - **Fields**: `request_id`, `shop_domain`, `user_id`, `operation`
 
 #### 2. Metrics Collection
+
 - **Implementation**: Prometheus metrics
 - **Purpose**: System monitoring and alerting
 - **Frontend Impact**: Monitor system health and performance
@@ -204,6 +224,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ### 🚀 Deployment
 
 #### 1. Render.com Configuration
+
 - **Implementation**: Complete deployment setup
 - **Purpose**: Production deployment
 - **Frontend Impact**: Coordinate with backend deployment
@@ -211,6 +232,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 - **Health Checks**: `/health` endpoint for liveness probes
 
 #### 2. Environment Variables
+
 - **Implementation**: Comprehensive environment configuration
 - **Purpose**: Secure configuration management
 - **Frontend Impact**: Coordinate environment setup
@@ -225,6 +247,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ## Breaking Changes
 
 ### ⚠️ None in v1.0.0
+
 - All changes are additive and backward compatible
 - No existing API contracts were modified
 - All new features are opt-in via feature flags
@@ -232,6 +255,7 @@ This document outlines the key changes made to the SMS Blossom backend that the 
 ## Migration Guide
 
 ### 1. Update API Client
+
 ```typescript
 // Old way
 const response = await fetch('/api/campaigns');
@@ -241,12 +265,13 @@ const response = await fetch('/api/campaigns', {
   headers: {
     'X-Shop-Domain': shopDomain,
     'X-Request-ID': requestId,
-    'Authorization': `Bearer ${token}`
-  }
+    Authorization: `Bearer ${token}`,
+  },
 });
 ```
 
 ### 2. Handle New Error Responses
+
 ```typescript
 // Old way
 if (response.status === 400) {
@@ -262,6 +287,7 @@ if (response.status === 400) {
 ```
 
 ### 3. Implement Health Monitoring
+
 ```typescript
 // Check system health
 const health = await client.health.get();
@@ -277,23 +303,25 @@ if (!ready.ready) {
 ```
 
 ### 4. Use Template System
+
 ```typescript
 // Preview template
 const preview = await client.templates.preview({
   template: 'Hello {{customer_name}}!',
-  variables: { customer_name: 'John' }
+  variables: { customer_name: 'John' },
 });
 
 // Validate template
 const validation = await client.templates.validate({
   template: 'Hello {{customer_name}}!',
-  trigger: 'order_created'
+  trigger: 'order_created',
 });
 ```
 
 ## Testing
 
 ### 1. Health Endpoints
+
 ```typescript
 // Test health endpoint
 const health = await client.health.get();
@@ -303,6 +331,7 @@ expect(health.redis.ok).toBe(true);
 ```
 
 ### 2. Queue Health
+
 ```typescript
 // Test queue health
 const queueHealth = await client.queue.getHealth();
@@ -311,11 +340,12 @@ expect(queueHealth.queues).toBeDefined();
 ```
 
 ### 3. Template System
+
 ```typescript
 // Test template preview
 const preview = await client.templates.preview({
   template: 'Hello {{customer_name}}!',
-  variables: { customer_name: 'John' }
+  variables: { customer_name: 'John' },
 });
 expect(preview.rendered).toBe('Hello John!');
 ```
@@ -323,18 +353,21 @@ expect(preview.rendered).toBe('Hello John!');
 ## Next Steps
 
 ### 1. Immediate Actions
+
 - [ ] Update API client to include required headers
 - [ ] Implement health monitoring in frontend
 - [ ] Add error handling for new error format
 - [ ] Test template system integration
 
 ### 2. Short Term (1-2 weeks)
+
 - [ ] Implement queue health monitoring
 - [ ] Add metrics dashboard
 - [ ] Test webhook integration
 - [ ] Validate CORS configuration
 
 ### 3. Long Term (1 month)
+
 - [ ] Implement advanced template features
 - [ ] Add real-time updates
 - [ ] Optimize caching strategy

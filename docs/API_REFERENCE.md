@@ -11,6 +11,7 @@ https://api.sms-blossom.com
 ## Authentication
 
 All authenticated endpoints require:
+
 - `Authorization: Bearer <jwt_token>`
 - `X-Shop-Domain: <shop>.myshopify.com`
 - `Content-Type: application/json`
@@ -34,6 +35,7 @@ All authenticated endpoints require:
 **Rate Limit**: None
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -60,11 +62,13 @@ All authenticated endpoints require:
 ```
 
 **Curl Example**:
+
 ```bash
 curl -X GET https://api.sms-blossom.com/health
 ```
 
 **TypeScript Usage**:
+
 ```typescript
 const health = await api.health.get();
 console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
@@ -79,6 +83,7 @@ console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
 **Rate Limit**: None
 
 **Response**:
+
 ```json
 {
   "ready": true,
@@ -87,6 +92,7 @@ console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
 ```
 
 **Status Codes**:
+
 - `200`: All systems ready
 - `503`: Systems not ready
 
@@ -103,6 +109,7 @@ console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
 **Rate Limit**: 10 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "template": "Hello {{customer_name}}, your order #{{order_number}} is ready!",
@@ -114,6 +121,7 @@ console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
 ```
 
 **Response**:
+
 ```json
 {
   "rendered": "Hello John Doe, your order #1001 is ready!",
@@ -124,6 +132,7 @@ console.log(`System status: ${health.ok ? 'healthy' : 'unhealthy'}`);
 ```
 
 **Curl Example**:
+
 ```bash
 curl -X POST https://api.sms-blossom.com/templates/preview \
   -H "Authorization: Bearer <token>" \
@@ -141,9 +150,11 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Path Parameters**:
+
 - `trigger`: Trigger type (`abandoned_checkout`, `order_created`, `order_paid`, etc.)
 
 **Response**:
+
 ```json
 {
   "trigger": "abandoned_checkout",
@@ -175,6 +186,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 10 requests per minute
 
 **Response**:
+
 ```json
 {
   "timezone": "America/New_York",
@@ -201,6 +213,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 5 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "timezone": "America/New_York",
@@ -216,6 +229,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -246,6 +260,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Response**:
+
 ```json
 {
   "automations": [
@@ -271,6 +286,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 5 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "automations": [
@@ -299,6 +315,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 10 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "filter": {
@@ -319,6 +336,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "count": 1250,
@@ -347,11 +365,13 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Query Parameters**:
+
 - `status`: Filter by status (`draft`, `scheduled`, `sending`, `paused`, `completed`, `failed`)
 - `limit`: Number of results (default: 50, max: 100)
 - `offset`: Pagination offset (default: 0)
 
 **Response**:
+
 ```json
 {
   "campaigns": [
@@ -385,6 +405,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 5 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "name": "Welcome Campaign",
@@ -397,6 +418,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "id": "camp_123",
@@ -421,6 +443,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Response**:
+
 ```json
 {
   "id": "camp_123",
@@ -450,10 +473,11 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 10 requests per minute
 
 **Response**:
+
 ```json
 {
   "audience_count": 1250,
-  "estimated_cost": 12.50,
+  "estimated_cost": 12.5,
   "currency": "USD",
   "segments": 1,
   "warnings": []
@@ -469,6 +493,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 5 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "phone": "+1234567890",
@@ -479,6 +504,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -497,12 +523,13 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 1 request per minute
 
 **Response**:
+
 ```json
 {
   "success": true,
   "campaign_id": "camp_123",
   "audience_count": 1250,
-  "estimated_cost": 12.50,
+  "estimated_cost": 12.5,
   "status": "sending"
 }
 ```
@@ -520,6 +547,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Response**:
+
 ```json
 {
   "discounts": [
@@ -547,6 +575,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 5 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "code": "WELCOME10",
@@ -559,6 +588,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "id": "disc_123",
@@ -582,6 +612,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 10 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "code": "WELCOME10"
@@ -589,6 +620,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 ```
 
 **Response**:
+
 ```json
 {
   "conflicts": false,
@@ -605,6 +637,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Response**:
+
 ```json
 {
   "apply_url": "https://shop.myshopify.com/discount/WELCOME10",
@@ -631,6 +664,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Caching**: 5 minutes (`x-cache: hit`)
 
 **Response**:
+
 ```json
 {
   "period": {
@@ -659,11 +693,13 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Caching**: 2 minutes (`x-cache: hit`)
 
 **Query Parameters**:
+
 - `start`: Start date (ISO 8601)
 - `end`: End date (ISO 8601)
 - `granularity`: `hour`, `day`, `week`, `month`
 
 **Response**:
+
 ```json
 {
   "period": {
@@ -696,6 +732,7 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: 20 requests per minute
 
 **Response**:
+
 ```json
 {
   "redis": true,
@@ -737,9 +774,11 @@ curl -X POST https://api.sms-blossom.com/templates/preview \
 **Rate Limit**: None
 
 **Headers**:
+
 - `Authorization: Bearer <METRICS_TOKEN>` (if token is configured)
 
 **Response**: Prometheus text format
+
 ```
 # HELP sms_send_attempts_total Total number of SMS send attempts
 # TYPE sms_send_attempts_total counter
@@ -755,6 +794,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: None
 
 **Response**:
+
 ```json
 {
   "metrics": [
@@ -791,11 +831,13 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 100 requests per minute
 
 **Query Parameters**:
+
 - `shop`: Shop domain
 - `timestamp`: App Proxy timestamp
 - `signature`: App Proxy HMAC
 
 **Request Body**:
+
 ```json
 {
   "phone": "+1234567890",
@@ -805,6 +847,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -822,6 +865,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 100 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "phone": "+1234567890"
@@ -829,6 +873,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -845,6 +890,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 100 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "phone": "+1234567890",
@@ -853,6 +899,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 ```
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -877,6 +924,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 100 requests per minute
 
 **Query Parameters**:
+
 - `token`: Unsubscribe token
 
 **Response**: HTML page
@@ -894,11 +942,13 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 1000 requests per minute
 
 **Headers**:
+
 - `X-Shopify-Hmac-Sha256`: Webhook signature
 - `X-Shopify-Shop-Domain`: Shop domain
 - `X-Shopify-Topic`: `orders/create`
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -915,6 +965,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 **Rate Limit**: 1000 requests per minute
 
 **Request Body**:
+
 ```json
 {
   "message_id": "msg_123",
@@ -924,6 +975,7 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -948,17 +1000,18 @@ sms_send_attempts_total{provider="mitto",status="success"} 1250
 
 ### Common Error Codes
 
-| Code | Status | Description |
-|------|--------|-------------|
-| `missing_auth` | 401 | Missing or invalid authentication |
-| `shop_not_installed` | 409 | Shop not installed |
-| `rate_limit_exceeded` | 429 | Rate limit exceeded |
-| `validation_error` | 400 | Request validation failed |
-| `internal_error` | 500 | Internal server error |
+| Code                  | Status | Description                       |
+| --------------------- | ------ | --------------------------------- |
+| `missing_auth`        | 401    | Missing or invalid authentication |
+| `shop_not_installed`  | 409    | Shop not installed                |
+| `rate_limit_exceeded` | 429    | Rate limit exceeded               |
+| `validation_error`    | 400    | Request validation failed         |
+| `internal_error`      | 500    | Internal server error             |
 
 ### Rate Limit Headers
 
 When rate limit is exceeded:
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 0
@@ -973,6 +1026,7 @@ Retry-After: 60
 ### Cache Headers
 
 Responses may include cache headers:
+
 ```
 x-cache: hit
 x-cache-ttl: 300
@@ -982,6 +1036,7 @@ x-cache-key: reports:overview:shop_123
 ### Cache Invalidation
 
 Cache is automatically invalidated when:
+
 - Campaigns are sent
 - Settings are updated
 - New webhooks are processed
@@ -996,7 +1051,7 @@ import { SmsBlossomApi } from '../sdk';
 const api = new SmsBlossomApi({
   baseUrl: 'https://api.sms-blossom.com',
   getAuthHeaders: async () => ({
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
     'X-Shop-Domain': shopDomain,
   }),
 });

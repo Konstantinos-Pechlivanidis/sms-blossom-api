@@ -18,15 +18,15 @@ import { getSessionToken } from '@shopify/app-bridge/utilities';
 
 function useApiClient() {
   const app = useAppBridge();
-  
+
   const getAuthHeaders = async () => {
     const token = await getSessionToken(app);
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   };
-  
+
   return { getAuthHeaders };
 }
 ```
@@ -38,7 +38,7 @@ function useApiClient() {
 const shopDomain = window.location.hostname.replace('.myshopify.com', '') + '.myshopify.com';
 
 const headers = {
-  'Authorization': `Bearer ${token}`,
+  Authorization: `Bearer ${token}`,
   'X-Shop-Domain': shopDomain,
   'Content-Type': 'application/json',
 };
@@ -58,13 +58,10 @@ class ApiClient {
     this.getAuthHeaders = getAuthHeaders;
   }
 
-  async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = await this.getAuthHeaders();
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -114,7 +111,7 @@ class ApiClient {
 class ApiError extends Error {
   constructor(
     public status: number,
-    public response: string
+    public response: string,
   ) {
     super(`API Error ${status}: ${response}`);
   }
@@ -144,6 +141,7 @@ function handleApiError(error: ApiError): string {
 ### Required Origins
 
 The backend CORS allowlist includes:
+
 - `https://admin.shopify.com` (Shopify Admin)
 - `https://your-app-domain.com` (Your app domain)
 
@@ -166,31 +164,31 @@ const corsHeaders = {
 async function withRetry<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
-      
+
       // Don't retry on client errors (4xx)
       if (error instanceof ApiError && error.status < 500) {
         throw error;
       }
-      
+
       // Exponential backoff
       const delay = baseDelay * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError!;
 }
 ```
@@ -198,9 +196,7 @@ async function withRetry<T>(
 ### Rate Limit Handling
 
 ```typescript
-async function handleRateLimit<T>(
-  fn: () => Promise<T>
-): Promise<T> {
+async function handleRateLimit<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (error) {
@@ -208,7 +204,7 @@ async function handleRateLimit<T>(
       // Extract Retry-After header
       const retryAfter = error.response.match(/Retry-After: (\d+)/)?.[1];
       if (retryAfter) {
-        await new Promise(resolve => setTimeout(resolve, parseInt(retryAfter) * 1000));
+        await new Promise((resolve) => setTimeout(resolve, parseInt(retryAfter) * 1000));
         return fn(); // Retry once
       }
     }
@@ -221,13 +217,13 @@ async function handleRateLimit<T>(
 
 ### HTTP Status Codes → UI Actions
 
-| Status | UI Action | User Message |
-|--------|-----------|--------------|
-| 401 | Redirect to login | "Please log in again" |
-| 403 | Show error banner | "You don't have permission" |
-| 409 | Show installation prompt | "Please install the app first" |
-| 429 | Show retry button | "Too many requests. Please wait" |
-| 500 | Show error banner | "Server error. Please try again" |
+| Status | UI Action                | User Message                     |
+| ------ | ------------------------ | -------------------------------- |
+| 401    | Redirect to login        | "Please log in again"            |
+| 403    | Show error banner        | "You don't have permission"      |
+| 409    | Show installation prompt | "Please install the app first"   |
+| 429    | Show retry button        | "Too many requests. Please wait" |
+| 500    | Show error banner        | "Server error. Please try again" |
 
 ### Error Banner Component
 
@@ -241,7 +237,7 @@ interface ErrorBannerProps {
 function ErrorBanner({ error, onRetry, onDismiss }: ErrorBannerProps) {
   const message = handleApiError(error);
   const canRetry = error.status >= 500 || error.status === 429;
-  
+
   return (
     <div className="error-banner">
       <span>{message}</span>
@@ -280,10 +276,10 @@ function logApiCall(endpoint: string, method: string, requestId: string) {
 }
 
 function logApiError(error: ApiError, requestId: string) {
-  console.error(`API Error: ${error.status}`, { 
-    requestId, 
+  console.error(`API Error: ${error.status}`, {
+    requestId,
     endpoint: error.endpoint,
-    response: error.response 
+    response: error.response,
   });
 }
 ```
@@ -301,7 +297,7 @@ const api = new SmsBlossomApi({
   getAuthHeaders: async () => {
     const token = await getSessionToken(app);
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'X-Shop-Domain': shopDomain,
     };
   },
@@ -372,7 +368,7 @@ import { useApiClient } from './useApiClient';
 
 test('should handle API errors', async () => {
   const { result } = renderHook(() => useApiClient());
-  
+
   try {
     await result.current.get('/invalid-endpoint');
   } catch (error) {
@@ -385,6 +381,7 @@ test('should handle API errors', async () => {
 ## 10. Best Practices
 
 ### 1. Always Handle Errors
+
 ```typescript
 try {
   const data = await api.campaigns.list();
@@ -395,6 +392,7 @@ try {
 ```
 
 ### 2. Use Loading States
+
 ```typescript
 const [loading, setLoading] = useState(false);
 const [data, setData] = useState(null);
@@ -411,6 +409,7 @@ const fetchData = async () => {
 ```
 
 ### 3. Implement Caching
+
 ```typescript
 const cache = new Map();
 
@@ -418,7 +417,7 @@ async function getCachedData<T>(key: string, fetcher: () => Promise<T>): Promise
   if (cache.has(key)) {
     return cache.get(key);
   }
-  
+
   const data = await fetcher();
   cache.set(key, data);
   return data;
@@ -426,6 +425,7 @@ async function getCachedData<T>(key: string, fetcher: () => Promise<T>): Promise
 ```
 
 ### 4. Use Request Deduplication
+
 ```typescript
 const pendingRequests = new Map();
 
@@ -433,10 +433,10 @@ async function deduplicatedRequest<T>(key: string, fetcher: () => Promise<T>): P
   if (pendingRequests.has(key)) {
     return pendingRequests.get(key);
   }
-  
+
   const promise = fetcher();
   pendingRequests.set(key, promise);
-  
+
   try {
     const result = await promise;
     return result;

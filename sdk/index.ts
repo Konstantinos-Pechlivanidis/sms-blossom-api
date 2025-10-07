@@ -1,6 +1,6 @@
 /**
  * SMS Blossom TypeScript SDK
- * 
+ *
  * A lightweight, type-safe client for the SMS Blossom API.
  * No external dependencies - uses native fetch API.
  */
@@ -124,13 +124,10 @@ export class SmsBlossomApi {
     this.config = config;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.config.baseUrl}${endpoint}`;
     const headers = await this.config.getAuthHeaders();
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -146,7 +143,7 @@ export class SmsBlossomApi {
         response.status,
         errorData.message || response.statusText,
         errorData.error || 'api_error',
-        errorData.details
+        errorData.details,
       );
     }
 
@@ -156,8 +153,7 @@ export class SmsBlossomApi {
   // Health endpoints
   health = {
     get: (): Promise<HealthResponse> => this.request('/health'),
-    ready: (): Promise<{ ready: boolean; request_id: string }> => 
-      this.request('/health/ready'),
+    ready: (): Promise<{ ready: boolean; request_id: string }> => this.request('/health/ready'),
   };
 
   // Template endpoints
@@ -165,7 +161,7 @@ export class SmsBlossomApi {
     preview: (data: {
       template: string;
       variables: Record<string, any>;
-    }): Promise<TemplatePreview> => 
+    }): Promise<TemplatePreview> =>
       this.request('/templates/preview', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -180,21 +176,22 @@ export class SmsBlossomApi {
       variables_used: string[];
       missing_required: string[];
       unknown_variables: string[];
-    }> => 
+    }> =>
       this.request('/templates/validate', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    getVariables: (trigger: string): Promise<{
+    getVariables: (
+      trigger: string,
+    ): Promise<{
       trigger: string;
       variables: Array<{
         name: string;
         type: string;
         description: string;
       }>;
-    }> => 
-      this.request(`/templates/variables/${trigger}`),
+    }> => this.request(`/templates/variables/${trigger}`),
 
     getTriggers: (): Promise<{
       triggers: Array<{
@@ -202,8 +199,7 @@ export class SmsBlossomApi {
         description: string;
         variables: string[];
       }>;
-    }> => 
-      this.request('/templates/triggers'),
+    }> => this.request('/templates/triggers'),
   };
 
   // Settings endpoints
@@ -221,8 +217,7 @@ export class SmsBlossomApi {
       abandoned?: {
         delayMinutes: number;
       };
-    }> => 
-      this.request('/settings'),
+    }> => this.request('/settings'),
 
     update: (data: {
       timezone?: string;
@@ -240,7 +235,7 @@ export class SmsBlossomApi {
     }): Promise<{
       success: boolean;
       settings: any;
-    }> => 
+    }> =>
       this.request('/settings', {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -265,7 +260,7 @@ export class SmsBlossomApi {
       if (params?.status) query.set('status', params.status);
       if (params?.limit) query.set('limit', params.limit.toString());
       if (params?.offset) query.set('offset', params.offset.toString());
-      
+
       return this.request(`/campaigns?${query.toString()}`);
     },
 
@@ -279,104 +274,118 @@ export class SmsBlossomApi {
       discount_id?: string;
       scheduled_at?: string;
       utm?: Record<string, string>;
-    }): Promise<Campaign> => 
+    }): Promise<Campaign> =>
       this.request('/campaigns', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    get: (id: string): Promise<Campaign> => 
-      this.request(`/campaigns/${id}`),
+    get: (id: string): Promise<Campaign> => this.request(`/campaigns/${id}`),
 
-    update: (id: string, data: Partial<Campaign>): Promise<Campaign> => 
+    update: (id: string, data: Partial<Campaign>): Promise<Campaign> =>
       this.request(`/campaigns/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
 
-    delete: (id: string): Promise<{ success: boolean }> => 
+    delete: (id: string): Promise<{ success: boolean }> =>
       this.request(`/campaigns/${id}`, {
         method: 'DELETE',
       }),
 
-    estimate: (id: string): Promise<{
+    estimate: (
+      id: string,
+    ): Promise<{
       audience_count: number;
       estimated_cost: number;
       currency: string;
       segments: number;
       warnings: string[];
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/estimate`, {
         method: 'POST',
       }),
 
-    testSend: (id: string, data: {
-      phone: string;
-      variables: Record<string, any>;
-    }): Promise<{
+    testSend: (
+      id: string,
+      data: {
+        phone: string;
+        variables: Record<string, any>;
+      },
+    ): Promise<{
       success: boolean;
       message_id: string;
       phone: string;
       rendered: string;
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/test-send`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    send: (id: string): Promise<{
+    send: (
+      id: string,
+    ): Promise<{
       success: boolean;
       campaign_id: string;
       audience_count: number;
       estimated_cost: number;
       status: string;
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/send`, {
         method: 'POST',
       }),
 
-    attachDiscount: (id: string, discountId: string): Promise<{
+    attachDiscount: (
+      id: string,
+      discountId: string,
+    ): Promise<{
       success: boolean;
       campaign_id: string;
       discount_id: string;
       apply_url: string;
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/discount`, {
         method: 'POST',
         body: JSON.stringify({ discount_id: discountId }),
       }),
 
-    detachDiscount: (id: string): Promise<{
+    detachDiscount: (
+      id: string,
+    ): Promise<{
       success: boolean;
       campaign_id: string;
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/discount`, {
         method: 'DELETE',
       }),
 
-    setUtm: (id: string, utm: Record<string, string>): Promise<{
+    setUtm: (
+      id: string,
+      utm: Record<string, string>,
+    ): Promise<{
       success: boolean;
       campaign_id: string;
       utm: Record<string, string>;
-    }> => 
+    }> =>
       this.request(`/campaigns/${id}/utm`, {
         method: 'PUT',
         body: JSON.stringify({ utm }),
       }),
 
-    getApplyUrl: (id: string): Promise<{
+    getApplyUrl: (
+      id: string,
+    ): Promise<{
       apply_url: string;
       utm_params: Record<string, string>;
-    }> => 
-      this.request(`/campaigns/${id}/apply-url`),
+    }> => this.request(`/campaigns/${id}/apply-url`),
   };
 
   // Discount endpoints
   discounts = {
     list: (): Promise<{
       discounts: Discount[];
-    }> => 
-      this.request('/discounts'),
+    }> => this.request('/discounts'),
 
     create: (data: {
       code: string;
@@ -388,22 +397,21 @@ export class SmsBlossomApi {
       usage_limit?: number;
       starts_at?: string;
       ends_at?: string;
-    }): Promise<Discount> => 
+    }): Promise<Discount> =>
       this.request('/discounts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    get: (id: string): Promise<Discount> => 
-      this.request(`/discounts/${id}`),
+    get: (id: string): Promise<Discount> => this.request(`/discounts/${id}`),
 
-    update: (id: string, data: Partial<Discount>): Promise<Discount> => 
+    update: (id: string, data: Partial<Discount>): Promise<Discount> =>
       this.request(`/discounts/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
 
-    delete: (id: string): Promise<{ success: boolean }> => 
+    delete: (id: string): Promise<{ success: boolean }> =>
       this.request(`/discounts/${id}`, {
         method: 'DELETE',
       }),
@@ -413,16 +421,19 @@ export class SmsBlossomApi {
     }): Promise<{
       conflicts: boolean;
       existing_discount: Discount | null;
-    }> => 
+    }> =>
       this.request('/discounts/conflicts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    getApplyUrl: (id: string, utm?: Record<string, string>): Promise<{
+    getApplyUrl: (
+      id: string,
+      utm?: Record<string, string>,
+    ): Promise<{
       apply_url: string;
       utm_params: Record<string, string>;
-    }> => 
+    }> =>
       this.request(`/discounts/${id}/apply-url`, {
         method: 'POST',
         body: JSON.stringify({ utm }),
@@ -440,7 +451,7 @@ export class SmsBlossomApi {
       if (params?.from) query.set('from', params.from);
       if (params?.to) query.set('to', params.to);
       if (params?.window) query.set('window', params.window);
-      
+
       return this.request(`/reports/overview?${query.toString()}`);
     },
 
@@ -477,7 +488,7 @@ export class SmsBlossomApi {
       if (params?.from) query.set('from', params.from);
       if (params?.to) query.set('to', params.to);
       if (params?.campaign_id) query.set('campaign_id', params.campaign_id);
-      
+
       return this.request(`/reports/campaigns?${query.toString()}`);
     },
 
@@ -509,16 +520,15 @@ export class SmsBlossomApi {
       if (params?.from) query.set('from', params.from);
       if (params?.to) query.set('to', params.to);
       if (params?.granularity) query.set('granularity', params.granularity);
-      
+
       return this.request(`/reports/messaging?${query.toString()}`);
     },
   };
 
   // Queue health endpoints
   queue = {
-    health: (): Promise<QueueHealth> => 
-      this.request('/queue/health'),
-    
+    health: (): Promise<QueueHealth> => this.request('/queue/health'),
+
     metrics: (): Promise<{
       metrics: Array<{
         queue: string;
@@ -530,15 +540,13 @@ export class SmsBlossomApi {
       }>;
       timestamp: string;
       request_id: string;
-    }> => 
-      this.request('/queue/metrics'),
+    }> => this.request('/queue/metrics'),
   };
 
   // Metrics endpoints
   metrics = {
-    get: (): Promise<string> => 
-      this.request('/metrics'),
-    
+    get: (): Promise<string> => this.request('/metrics'),
+
     getJson: (): Promise<{
       metrics: Array<{
         name: string;
@@ -551,8 +559,7 @@ export class SmsBlossomApi {
       }>;
       timestamp: string;
       request_id: string;
-    }> => 
-      this.request('/metrics/json'),
+    }> => this.request('/metrics/json'),
   };
 }
 
@@ -562,7 +569,7 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public error: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
     this.name = 'ApiError';

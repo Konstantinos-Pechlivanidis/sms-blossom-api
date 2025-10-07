@@ -28,6 +28,7 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
 ## API Surfaces
 
 ### 1. Admin API (Authenticated)
+
 - **Base URL**: `https://api.sms-blossom.com`
 - **Authentication**: JWT tokens from Shopify App Bridge
 - **Headers Required**:
@@ -36,6 +37,7 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
   - `Content-Type: application/json`
 
 **Endpoints**:
+
 - `/health` - System health check
 - `/settings` - Shop configuration
 - `/automations` - Automation rules
@@ -46,6 +48,7 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
 - `/templates/*` - Template management
 
 ### 2. App Proxy (Public)
+
 - **Base URL**: `https://api.sms-blossom.com/proxy`
 - **Authentication**: HMAC signature verification
 - **Headers Required**:
@@ -53,34 +56,40 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
   - `X-Shopify-Hmac-Sha256: <signature>`
 
 **Endpoints**:
+
 - `/proxy/consent` - SMS consent collection
 - `/proxy/unsubscribe` - SMS unsubscribe
 - `/proxy/back-in-stock` - Back-in-stock notifications
 
 ### 3. Webhooks (External)
+
 - **Base URL**: `https://api.sms-blossom.com/webhooks`
 - **Authentication**: HMAC signature verification
 - **Headers Required**:
   - `X-Shopify-Hmac-Sha256: <signature>`
 
 **Endpoints**:
+
 - `/webhooks/shopify/*` - Shopify events
 - `/webhooks/mitto/*` - SMS delivery receipts
 
 ## Authentication Model
 
 ### JWT Token Flow
+
 1. Frontend obtains session token from Shopify App Bridge
 2. Token is sent as `Authorization: Bearer <token>` header
 3. Backend validates token and extracts shop information
 4. Shop scoping middleware attaches shop context to request
 
 ### Shop Scoping
+
 - All authenticated endpoints require shop context
 - Shop domain is extracted from JWT token or `X-Shop-Domain` header
 - Returns `409 Conflict` if shop is not installed
 
 ### Rate Limiting
+
 - Token bucket algorithm with Redis backend
 - Default: 100 requests per minute per shop
 - Headers returned:
@@ -92,6 +101,7 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
 ## Queue System
 
 ### BullMQ Queues
+
 - **eventsQueue**: Shopify webhook events
 - **automationsQueue**: Automation rule processing
 - **campaignsQueue**: Campaign audience batching
@@ -99,6 +109,7 @@ The SMS Blossom backend is a Node.js/Express API that provides SMS marketing cap
 - **housekeepingQueue**: Cleanup and maintenance
 
 ### Queue Flow
+
 ```
 Shopify Webhook → eventsQueue → automationsQueue → deliveryQueue
                                     ↓
@@ -108,6 +119,7 @@ Shopify Webhook → eventsQueue → automationsQueue → deliveryQueue
 ## Environment Variables
 
 ### Backend Environment
+
 ```bash
 # Database
 DATABASE_URL=postgresql://user:pass@host:5432/smsblossom
@@ -144,6 +156,7 @@ METRICS_TOKEN=your-metrics-token
 ```
 
 ### Frontend Environment
+
 ```bash
 # API Configuration
 REACT_APP_API_URL=https://api.sms-blossom.com
@@ -158,21 +171,25 @@ REACT_APP_PROXY_SUBPATH=/apps/sms-blossom
 ## Data Flow
 
 ### 1. User Authentication
+
 ```
 Frontend → Shopify App Bridge → JWT Token → Backend API
 ```
 
 ### 2. SMS Campaign Flow
+
 ```
 Campaign Creation → Audience Snapshot → Queue Jobs → SMS Delivery
 ```
 
 ### 3. Webhook Processing
+
 ```
 Shopify Event → HMAC Verification → Queue Job → Automation Processing
 ```
 
 ### 4. Consent Management
+
 ```
 App Proxy → HMAC Verification → Consent Update → Shopify Customer Update
 ```

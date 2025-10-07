@@ -10,19 +10,20 @@ The reporting system provides analytics for SMS campaigns, automation performanc
 
 ### Cache Configuration
 
-| Report Type | TTL | Description |
-|-------------|-----|-------------|
-| `overview` | 5 minutes | High-level metrics and KPIs |
-| `campaigns` | 10 minutes | Campaign performance data |
-| `messaging` | 15 minutes | Message delivery analytics |
-| `attribution` | 30 minutes | Revenue attribution data |
-| `segments` | 1 hour | Customer segment analytics |
+| Report Type   | TTL        | Description                 |
+| ------------- | ---------- | --------------------------- |
+| `overview`    | 5 minutes  | High-level metrics and KPIs |
+| `campaigns`   | 10 minutes | Campaign performance data   |
+| `messaging`   | 15 minutes | Message delivery analytics  |
+| `attribution` | 30 minutes | Revenue attribution data    |
+| `segments`    | 1 hour     | Customer segment analytics  |
 
 ### Cache Keys
 
 Cache keys follow the pattern: `reports:{shopId}:{reportType}:{params}`
 
 **Examples**:
+
 - `reports:shop_123:overview:from:2024-01-01|to:2024-01-31`
 - `reports:shop_123:messaging:from:2024-01-15|granularity:day`
 - `reports:shop_123:campaigns:campaign_id:camp_123`
@@ -47,12 +48,14 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
 **Description**: High-level metrics and KPIs
 
 **Parameters**:
+
 - `shop`: Shop domain (required)
 - `from`: Start date (ISO 8601)
 - `to`: End date (ISO 8601)
 - `window`: Time window (`7d`, `30d`, `90d`)
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -81,12 +84,14 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
 **Description**: Campaign performance analytics
 
 **Parameters**:
+
 - `shop`: Shop domain (required)
 - `from`: Start date (ISO 8601)
 - `to`: End date (ISO 8601)
 - `campaign_id`: Specific campaign ID (optional)
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -103,7 +108,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
       "delivered": 1180,
       "failed": 70,
       "delivery_rate": 94.4,
-      "cost": 12.50,
+      "cost": 12.5,
       "revenue": 1250,
       "roi": 10000,
       "created_at": "2024-01-15T10:00:00Z",
@@ -114,7 +119,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
     "total_campaigns": 15,
     "total_sent": 12500,
     "total_delivered": 11800,
-    "total_cost": 125.00,
+    "total_cost": 125.0,
     "total_revenue": 12500,
     "average_roi": 9900
   },
@@ -131,12 +136,14 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
 **Description**: Message delivery analytics with time series
 
 **Parameters**:
+
 - `shop`: Shop domain (required)
 - `from`: Start date (ISO 8601)
 - `to`: End date (ISO 8601)
 - `granularity`: Time granularity (`hour`, `day`, `week`, `month`)
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -152,7 +159,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
       "delivered": 475,
       "failed": 25,
       "delivery_rate": 95.0,
-      "cost": 5.00,
+      "cost": 5.0,
       "revenue": 500
     }
   ],
@@ -161,7 +168,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
     "total_delivered": 11800,
     "total_failed": 700,
     "average_delivery_rate": 94.4,
-    "total_cost": 125.00,
+    "total_cost": 125.0,
     "total_revenue": 12500
   },
   "cached_at": "2024-01-15T10:30:00Z"
@@ -177,12 +184,14 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
 **Description**: Revenue attribution from SMS campaigns
 
 **Parameters**:
+
 - `shop`: Shop domain (required)
 - `from`: Start date (ISO 8601)
 - `to`: End date (ISO 8601)
 - `attribution_window`: Attribution window (`1d`, `7d`, `30d`)
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -199,7 +208,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
         "orders_generated": 125,
         "revenue_attributed": 12500,
         "attribution_rate": 10.0,
-        "average_order_value": 100.00
+        "average_order_value": 100.0
       }
     ],
     "summary": {
@@ -207,7 +216,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
       "total_orders": 1250,
       "total_revenue": 125000,
       "attribution_rate": 10.0,
-      "average_order_value": 100.00
+      "average_order_value": 100.0
     }
   },
   "cached_at": "2024-01-15T10:30:00Z"
@@ -223,10 +232,12 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
 **Description**: Customer segment analytics
 
 **Parameters**:
+
 - `shop`: Shop domain (required)
 - `segment_id`: Specific segment ID (optional)
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -237,7 +248,7 @@ x-cache-timestamp: 2024-01-15T10:30:00Z
       "contact_count": 500,
       "sms_consent_rate": 95.0,
       "engagement_rate": 85.0,
-      "average_order_value": 150.00,
+      "average_order_value": 150.0,
       "last_activity": "2024-01-15T10:30:00Z"
     }
   ],
@@ -279,13 +290,13 @@ await api.reports.invalidatePattern('campaigns:*');
 
 ### Cache Invalidation Events
 
-| Event | Invalidated Reports |
-|-------|-------------------|
-| `campaign.sent` | `campaigns`, `messaging`, `attribution` |
-| `campaign.completed` | `overview`, `campaigns` |
-| `message.delivered` | `messaging`, `attribution` |
-| `settings.updated` | `overview`, `segments` |
-| `discount.created` | `campaigns`, `attribution` |
+| Event                | Invalidated Reports                     |
+| -------------------- | --------------------------------------- |
+| `campaign.sent`      | `campaigns`, `messaging`, `attribution` |
+| `campaign.completed` | `overview`, `campaigns`                 |
+| `message.delivered`  | `messaging`, `attribution`              |
+| `settings.updated`   | `overview`, `segments`                  |
+| `discount.created`   | `campaigns`, `attribution`              |
 
 ## Performance Optimization
 
@@ -309,7 +320,7 @@ Load multiple reports in parallel:
 const [overview, campaigns, messaging] = await Promise.all([
   api.reports.overview({ shop: 'shop.myshopify.com' }),
   api.reports.campaigns({ shop: 'shop.myshopify.com' }),
-  api.reports.messaging({ shop: 'shop.myshopify.com' })
+  api.reports.messaging({ shop: 'shop.myshopify.com' }),
 ]);
 ```
 
@@ -321,7 +332,7 @@ Use pagination for large datasets:
 const campaigns = await api.reports.campaigns({
   shop: 'shop.myshopify.com',
   limit: 50,
-  offset: 0
+  offset: 0,
 });
 ```
 
@@ -332,27 +343,28 @@ const campaigns = await api.reports.campaigns({
 ```typescript
 class ReportLoader {
   private cache = new Map();
-  
+
   async loadReport(type: string, params: any) {
     const cacheKey = `${type}:${JSON.stringify(params)}`;
-    
+
     // Check local cache first
     if (this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey);
-      if (Date.now() - cached.timestamp < 300000) { // 5 minutes
+      if (Date.now() - cached.timestamp < 300000) {
+        // 5 minutes
         return cached.data;
       }
     }
-    
+
     // Load from API
     const response = await api.reports[type](params);
-    
+
     // Cache locally
     this.cache.set(cacheKey, {
       data: response,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     return response;
   }
 }
@@ -363,7 +375,7 @@ class ReportLoader {
 ```typescript
 class ReportPoller {
   private intervals = new Map();
-  
+
   startPolling(reportType: string, params: any, callback: Function) {
     const interval = setInterval(async () => {
       try {
@@ -373,10 +385,10 @@ class ReportPoller {
         console.error('Report polling error:', error);
       }
     }, 30000); // 30 seconds
-    
+
     this.intervals.set(`${reportType}:${JSON.stringify(params)}`, interval);
   }
-  
+
   stopPolling(reportType: string, params: any) {
     const key = `${reportType}:${JSON.stringify(params)}`;
     const interval = this.intervals.get(key);
@@ -397,16 +409,16 @@ class ReportErrorHandler {
       // Rate limited - back off
       return this.backoff(reportType);
     }
-    
+
     if (error.status === 500) {
       // Server error - retry with exponential backoff
       return this.retry(reportType);
     }
-    
+
     // Other errors - show user-friendly message
     return this.showError(error.message);
   }
-  
+
   private backoff(reportType: string) {
     // Implement exponential backoff
     const delay = Math.min(1000 * Math.pow(2, this.retryCount), 30000);
@@ -474,11 +486,11 @@ console.log(performance);
 
 ### Common Issues
 
-| Issue | Symptoms | Resolution |
-|-------|----------|------------|
-| Cache misses | Slow report loading | Check Redis connection |
-| Stale data | Outdated reports | Verify cache invalidation |
-| Memory usage | High Redis memory | Optimize TTLs |
+| Issue        | Symptoms            | Resolution                |
+| ------------ | ------------------- | ------------------------- |
+| Cache misses | Slow report loading | Check Redis connection    |
+| Stale data   | Outdated reports    | Verify cache invalidation |
+| Memory usage | High Redis memory   | Optimize TTLs             |
 | Slow queries | Long response times | Optimize database queries |
 
 ### Debug Commands

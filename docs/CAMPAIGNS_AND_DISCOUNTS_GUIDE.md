@@ -6,14 +6,14 @@ This guide covers SMS campaign management, discount code creation, and the integ
 
 ### Campaign States
 
-| State | Description | Actions Available |
-|-------|-------------|-------------------|
-| `draft` | Campaign created but not scheduled | Edit, Schedule, Delete |
-| `scheduled` | Campaign scheduled for future sending | Edit, Cancel, Send Now |
-| `sending` | Campaign is currently being sent | Pause, Monitor |
-| `paused` | Campaign sending is paused | Resume, Cancel |
-| `completed` | Campaign has finished sending | View Results, Duplicate |
-| `failed` | Campaign failed to send | Retry, Edit, Delete |
+| State       | Description                           | Actions Available       |
+| ----------- | ------------------------------------- | ----------------------- |
+| `draft`     | Campaign created but not scheduled    | Edit, Schedule, Delete  |
+| `scheduled` | Campaign scheduled for future sending | Edit, Cancel, Send Now  |
+| `sending`   | Campaign is currently being sent      | Pause, Monitor          |
+| `paused`    | Campaign sending is paused            | Resume, Cancel          |
+| `completed` | Campaign has finished sending         | View Results, Duplicate |
+| `failed`    | Campaign failed to send               | Retry, Edit, Delete     |
 
 ### Campaign Creation Flow
 
@@ -29,12 +29,12 @@ This guide covers SMS campaign management, discount code creation, and the integ
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Welcome Campaign",
-  template: "Welcome {{customer_name}}! Use code {{discount_code}} for 10% off!",
+  name: 'Welcome Campaign',
+  template: 'Welcome {{customer_name}}! Use code {{discount_code}} for 10% off!',
   audience: {
-    segment: "all"
+    segment: 'all',
   },
-  scheduled_at: "2024-01-16T10:00:00Z"
+  scheduled_at: '2024-01-16T10:00:00Z',
 });
 ```
 
@@ -42,13 +42,13 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Flash Sale Campaign",
-  template: "Flash sale! Use code {{discount_code}} for {{discount_value}} off!",
+  name: 'Flash Sale Campaign',
+  template: 'Flash sale! Use code {{discount_code}} for {{discount_value}} off!',
   audience: {
-    segment: "vip_customers"
+    segment: 'vip_customers',
   },
-  discount_id: "disc_123",
-  scheduled_at: "2024-01-16T10:00:00Z"
+  discount_id: 'disc_123',
+  scheduled_at: '2024-01-16T10:00:00Z',
 });
 ```
 
@@ -56,16 +56,16 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Product Launch",
-  template: "New product launched! Check it out: {{product_url}}",
+  name: 'Product Launch',
+  template: 'New product launched! Check it out: {{product_url}}',
   audience: {
-    segment: "product_interest"
+    segment: 'product_interest',
   },
   utm: {
-    utm_source: "sms",
-    utm_medium: "campaign",
-    utm_campaign: "product_launch"
-  }
+    utm_source: 'sms',
+    utm_medium: 'campaign',
+    utm_campaign: 'product_launch',
+  },
 });
 ```
 
@@ -75,8 +75,8 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const audience = {
-  segment: "vip_customers",
-  count: 1250
+  segment: 'vip_customers',
+  count: 1250,
 };
 ```
 
@@ -87,18 +87,18 @@ const audience = {
   filter: {
     and: [
       {
-        field: "sms_consent_state",
-        operator: "equals",
-        value: "opted_in"
+        field: 'sms_consent_state',
+        operator: 'equals',
+        value: 'opted_in',
       },
       {
-        field: "created_at",
-        operator: "gte",
-        value: "2024-01-01T00:00:00Z"
-      }
-    ]
+        field: 'created_at',
+        operator: 'gte',
+        value: '2024-01-01T00:00:00Z',
+      },
+    ],
   },
-  count: 850
+  count: 850,
 };
 ```
 
@@ -107,7 +107,7 @@ const audience = {
 #### Estimate Campaign Cost
 
 ```typescript
-const estimate = await api.campaigns.estimate("camp_123");
+const estimate = await api.campaigns.estimate('camp_123');
 
 console.log(estimate);
 // {
@@ -122,12 +122,12 @@ console.log(estimate);
 #### Test Send Campaign
 
 ```typescript
-const testResult = await api.campaigns.testSend("camp_123", {
-  phone: "+1234567890",
+const testResult = await api.campaigns.testSend('camp_123', {
+  phone: '+1234567890',
   variables: {
-    customer_name: "John Doe",
-    discount_code: "WELCOME10"
-  }
+    customer_name: 'John Doe',
+    discount_code: 'WELCOME10',
+  },
 });
 
 console.log(testResult);
@@ -145,9 +145,9 @@ console.log(testResult);
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Urgent Sale",
-  template: "Last chance! Sale ends in 2 hours!",
-  audience: { segment: "all" }
+  name: 'Urgent Sale',
+  template: 'Last chance! Sale ends in 2 hours!',
+  audience: { segment: 'all' },
   // No scheduled_at = immediate send
 });
 ```
@@ -156,10 +156,10 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Morning Sale",
+  name: 'Morning Sale',
   template: "Good morning! Today's special: {{discount_code}}",
-  audience: { segment: "all" },
-  scheduled_at: "2024-01-16T09:00:00Z"
+  audience: { segment: 'all' },
+  scheduled_at: '2024-01-16T09:00:00Z',
 });
 ```
 
@@ -167,11 +167,11 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Local Time Sale",
-  template: "Sale starts now!",
-  audience: { segment: "all" },
-  scheduled_at: "2024-01-16T09:00:00-05:00", // EST timezone
-  timezone: "America/New_York"
+  name: 'Local Time Sale',
+  template: 'Sale starts now!',
+  audience: { segment: 'all' },
+  scheduled_at: '2024-01-16T09:00:00-05:00', // EST timezone
+  timezone: 'America/New_York',
 });
 ```
 
@@ -183,15 +183,15 @@ const campaign = await api.campaigns.create({
 
 ```typescript
 const discount = await api.discounts.create({
-  code: "WELCOME10",
-  title: "Welcome Discount",
-  type: "percentage",
+  code: 'WELCOME10',
+  title: 'Welcome Discount',
+  type: 'percentage',
   value: 10,
-  currency_code: "USD",
-  starts_at: "2024-01-15T00:00:00Z",
-  ends_at: "2024-01-31T23:59:59Z",
+  currency_code: 'USD',
+  starts_at: '2024-01-15T00:00:00Z',
+  ends_at: '2024-01-31T23:59:59Z',
   usage_limit: 100,
-  once_per_customer: true
+  once_per_customer: true,
 });
 ```
 
@@ -199,13 +199,13 @@ const discount = await api.discounts.create({
 
 ```typescript
 const discount = await api.discounts.create({
-  code: "SAVE20",
-  title: "Save $20",
-  type: "amount",
+  code: 'SAVE20',
+  title: 'Save $20',
+  type: 'amount',
   value: 20,
-  currency_code: "USD",
+  currency_code: 'USD',
   minimum_amount: 100,
-  usage_limit: 50
+  usage_limit: 50,
 });
 ```
 
@@ -213,11 +213,11 @@ const discount = await api.discounts.create({
 
 ```typescript
 const discount = await api.discounts.create({
-  code: "FREESHIP",
-  title: "Free Shipping",
-  type: "shipping",
+  code: 'FREESHIP',
+  title: 'Free Shipping',
+  type: 'shipping',
   value: 0,
-  minimum_amount: 50
+  minimum_amount: 50,
 });
 ```
 
@@ -227,7 +227,7 @@ const discount = await api.discounts.create({
 
 ```typescript
 const conflicts = await api.discounts.checkConflicts({
-  code: "WELCOME10"
+  code: 'WELCOME10',
 });
 
 console.log(conflicts);
@@ -241,8 +241,8 @@ console.log(conflicts);
 
 ```typescript
 const validation = await api.discounts.validate({
-  code: "WELCOME10",
-  shop_domain: "shop.myshopify.com"
+  code: 'WELCOME10',
+  shop_domain: 'shop.myshopify.com',
 });
 
 console.log(validation);
@@ -262,7 +262,7 @@ console.log(validation);
 #### Generate Apply URL
 
 ```typescript
-const applyUrl = await api.discounts.getApplyUrl("disc_123");
+const applyUrl = await api.discounts.getApplyUrl('disc_123');
 
 console.log(applyUrl);
 // {
@@ -278,11 +278,11 @@ console.log(applyUrl);
 #### Custom UTM Parameters
 
 ```typescript
-const applyUrl = await api.discounts.getApplyUrl("disc_123", {
-  utm_source: "sms",
-  utm_medium: "campaign",
-  utm_campaign: "flash_sale",
-  utm_content: "discount_code"
+const applyUrl = await api.discounts.getApplyUrl('disc_123', {
+  utm_source: 'sms',
+  utm_medium: 'campaign',
+  utm_campaign: 'flash_sale',
+  utm_content: 'discount_code',
 });
 ```
 
@@ -293,7 +293,7 @@ const applyUrl = await api.discounts.getApplyUrl("disc_123", {
 #### Link Discount to Campaign
 
 ```typescript
-const result = await api.campaigns.attachDiscount("camp_123", "disc_123");
+const result = await api.campaigns.attachDiscount('camp_123', 'disc_123');
 
 console.log(result);
 // {
@@ -307,11 +307,11 @@ console.log(result);
 #### Set Campaign UTM Parameters
 
 ```typescript
-const result = await api.campaigns.setUtm("camp_123", {
-  utm_source: "sms",
-  utm_medium: "campaign",
-  utm_campaign: "welcome_series",
-  utm_content: "discount_offer"
+const result = await api.campaigns.setUtm('camp_123', {
+  utm_source: 'sms',
+  utm_medium: 'campaign',
+  utm_campaign: 'welcome_series',
+  utm_content: 'discount_offer',
 });
 ```
 
@@ -320,7 +320,7 @@ const result = await api.campaigns.setUtm("camp_123", {
 #### Get Campaign Apply URL
 
 ```typescript
-const applyUrl = await api.campaigns.getApplyUrl("camp_123");
+const applyUrl = await api.campaigns.getApplyUrl('camp_123');
 
 console.log(applyUrl);
 // {
@@ -338,7 +338,7 @@ console.log(applyUrl);
 ### Snapshot Campaign Audience
 
 ```typescript
-const snapshot = await api.campaigns.snapshotAudience("camp_123");
+const snapshot = await api.campaigns.snapshotAudience('camp_123');
 
 console.log(snapshot);
 // {
@@ -366,7 +366,7 @@ The audience snapshot process:
 ### Campaign Performance
 
 ```typescript
-const metrics = await api.campaigns.getMetrics("camp_123");
+const metrics = await api.campaigns.getMetrics('camp_123');
 
 console.log(metrics);
 // {
@@ -386,7 +386,7 @@ console.log(metrics);
 ### Real-time Campaign Status
 
 ```typescript
-const status = await api.campaigns.getStatus("camp_123");
+const status = await api.campaigns.getStatus('camp_123');
 
 console.log(status);
 // {
@@ -410,13 +410,13 @@ Campaign templates support all trigger variables plus campaign-specific variable
 
 #### Campaign-Specific Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `campaign_name` | Campaign name | "Welcome Campaign" |
-| `discount_code` | Discount code | "WELCOME10" |
-| `discount_value` | Discount value | "10%" or "$10" |
-| `apply_url` | Discount apply URL | "https://shop.myshopify.com/discount/WELCOME10" |
-| `campaign_url` | Campaign-specific URL | "https://shop.myshopify.com/campaign/welcome" |
+| Variable         | Description           | Example                                         |
+| ---------------- | --------------------- | ----------------------------------------------- |
+| `campaign_name`  | Campaign name         | "Welcome Campaign"                              |
+| `discount_code`  | Discount code         | "WELCOME10"                                     |
+| `discount_value` | Discount value        | "10%" or "$10"                                  |
+| `apply_url`      | Discount apply URL    | "https://shop.myshopify.com/discount/WELCOME10" |
+| `campaign_url`   | Campaign-specific URL | "https://shop.myshopify.com/campaign/welcome"   |
 
 #### Template Examples
 
@@ -460,18 +460,18 @@ Campaigns are processed in batches to manage load and ensure delivery:
 
 ```typescript
 const campaign = await api.campaigns.create({
-  name: "Large Campaign",
-  template: "Special offer for you!",
-  audience: { segment: "all" },
+  name: 'Large Campaign',
+  template: 'Special offer for you!',
+  audience: { segment: 'all' },
   batch_size: 100, // Process 100 contacts per batch
-  batch_delay: 30  // 30 seconds between batches
+  batch_delay: 30, // 30 seconds between batches
 });
 ```
 
 #### Batch Status
 
 ```typescript
-const batches = await api.campaigns.getBatches("camp_123");
+const batches = await api.campaigns.getBatches('camp_123');
 
 console.log(batches);
 // {
@@ -488,22 +488,22 @@ console.log(batches);
 
 ### Campaign Errors
 
-| Error | Description | Resolution |
-|-------|-------------|------------|
-| `invalid_segment` | Segment not found | Check segment ID |
-| `invalid_discount` | Discount not found | Check discount ID |
-| `insufficient_audience` | No contacts in audience | Adjust segment filters |
-| `template_validation_failed` | Template has errors | Fix template syntax |
-| `scheduling_conflict` | Campaign already scheduled | Choose different time |
+| Error                        | Description                | Resolution             |
+| ---------------------------- | -------------------------- | ---------------------- |
+| `invalid_segment`            | Segment not found          | Check segment ID       |
+| `invalid_discount`           | Discount not found         | Check discount ID      |
+| `insufficient_audience`      | No contacts in audience    | Adjust segment filters |
+| `template_validation_failed` | Template has errors        | Fix template syntax    |
+| `scheduling_conflict`        | Campaign already scheduled | Choose different time  |
 
 ### Discount Errors
 
-| Error | Description | Resolution |
-|-------|-------------|------------|
-| `code_already_exists` | Discount code exists | Choose different code |
-| `invalid_shopify_discount` | Shopify discount creation failed | Check Shopify API |
-| `insufficient_permissions` | No discount creation permissions | Check Shopify scopes |
-| `validation_failed` | Discount validation failed | Fix discount parameters |
+| Error                      | Description                      | Resolution              |
+| -------------------------- | -------------------------------- | ----------------------- |
+| `code_already_exists`      | Discount code exists             | Choose different code   |
+| `invalid_shopify_discount` | Shopify discount creation failed | Check Shopify API       |
+| `insufficient_permissions` | No discount creation permissions | Check Shopify scopes    |
+| `validation_failed`        | Discount validation failed       | Fix discount parameters |
 
 ## Best Practices
 
@@ -538,20 +538,20 @@ console.log(batches);
 ```typescript
 // 1. Create discount
 const discount = await api.discounts.create({
-  code: "WELCOME10",
-  title: "Welcome Discount",
-  type: "percentage",
+  code: 'WELCOME10',
+  title: 'Welcome Discount',
+  type: 'percentage',
   value: 10,
-  currency_code: "USD",
-  usage_limit: 100
+  currency_code: 'USD',
+  usage_limit: 100,
 });
 
 // 2. Create campaign
 const campaign = await api.campaigns.create({
-  name: "Welcome Campaign",
-  template: "Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!",
-  audience: { segment: "new_customers" },
-  discount_id: discount.id
+  name: 'Welcome Campaign',
+  template: 'Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!',
+  audience: { segment: 'new_customers' },
+  discount_id: discount.id,
 });
 
 // 3. Attach discount
@@ -562,8 +562,8 @@ const estimate = await api.campaigns.estimate(campaign.id);
 
 // 5. Test send
 await api.campaigns.testSend(campaign.id, {
-  phone: "+1234567890",
-  variables: { customer_name: "John Doe" }
+  phone: '+1234567890',
+  variables: { customer_name: 'John Doe' },
 });
 
 // 6. Send campaign
@@ -576,7 +576,7 @@ await api.campaigns.send(campaign.id);
 // Monitor campaign progress
 const status = await api.campaigns.getStatus(campaign.id);
 
-if (status.status === "sending") {
+if (status.status === 'sending') {
   console.log(`Progress: ${status.progress.percentage}%`);
   console.log(`Remaining: ${status.progress.remaining} contacts`);
 }

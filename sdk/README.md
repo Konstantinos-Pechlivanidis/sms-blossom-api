@@ -19,7 +19,7 @@ const api = new SmsBlossomApi({
   getAuthHeaders: async () => {
     const token = await getSessionToken(app);
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'X-Shop-Domain': shopDomain,
     };
   },
@@ -38,7 +38,7 @@ const campaigns = await api.campaigns.list();
 const api = new SmsBlossomApi({
   baseUrl: 'https://api.sms-blossom.com',
   getAuthHeaders: async () => ({
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
     'X-Shop-Domain': 'shop.myshopify.com',
   }),
 });
@@ -52,18 +52,18 @@ import { getSessionToken } from '@shopify/app-bridge/utilities';
 
 function useApiClient() {
   const app = useAppBridge();
-  
+
   const api = new SmsBlossomApi({
     baseUrl: process.env.REACT_APP_API_URL,
     getAuthHeaders: async () => {
       const token = await getSessionToken(app);
       return {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'X-Shop-Domain': shopDomain,
       };
     },
   });
-  
+
   return api;
 }
 ```
@@ -85,18 +85,18 @@ const ready = await api.health.ready();
 ```typescript
 // Preview template
 const preview = await api.templates.preview({
-  template: "Hello {{customer_name}}!",
-  variables: { customer_name: "John Doe" }
+  template: 'Hello {{customer_name}}!',
+  variables: { customer_name: 'John Doe' },
 });
 
 // Validate template
 const validation = await api.templates.validate({
-  template: "Hello {{customer_name}}!",
-  trigger: "welcome"
+  template: 'Hello {{customer_name}}!',
+  trigger: 'welcome',
 });
 
 // Get available variables
-const variables = await api.templates.getVariables("abandoned_checkout");
+const variables = await api.templates.getVariables('abandoned_checkout');
 ```
 
 ### Campaign Endpoints
@@ -107,33 +107,33 @@ const campaigns = await api.campaigns.list();
 
 // Create campaign
 const campaign = await api.campaigns.create({
-  name: "Welcome Campaign",
-  template: "Welcome {{customer_name}}!",
-  audience: { segment: "all" }
+  name: 'Welcome Campaign',
+  template: 'Welcome {{customer_name}}!',
+  audience: { segment: 'all' },
 });
 
 // Get campaign
-const campaign = await api.campaigns.get("camp_123");
+const campaign = await api.campaigns.get('camp_123');
 
 // Update campaign
-const updated = await api.campaigns.update("camp_123", {
-  name: "Updated Campaign"
+const updated = await api.campaigns.update('camp_123', {
+  name: 'Updated Campaign',
 });
 
 // Delete campaign
-await api.campaigns.delete("camp_123");
+await api.campaigns.delete('camp_123');
 
 // Estimate campaign
-const estimate = await api.campaigns.estimate("camp_123");
+const estimate = await api.campaigns.estimate('camp_123');
 
 // Test send campaign
-const test = await api.campaigns.testSend("camp_123", {
-  phone: "+1234567890",
-  variables: { customer_name: "John Doe" }
+const test = await api.campaigns.testSend('camp_123', {
+  phone: '+1234567890',
+  variables: { customer_name: 'John Doe' },
 });
 
 // Send campaign
-await api.campaigns.send("camp_123");
+await api.campaigns.send('camp_123');
 ```
 
 ### Discount Endpoints
@@ -144,31 +144,31 @@ const discounts = await api.discounts.list();
 
 // Create discount
 const discount = await api.discounts.create({
-  code: "WELCOME10",
-  title: "Welcome Discount",
-  type: "percentage",
+  code: 'WELCOME10',
+  title: 'Welcome Discount',
+  type: 'percentage',
   value: 10,
-  currency_code: "USD"
+  currency_code: 'USD',
 });
 
 // Get discount
-const discount = await api.discounts.get("disc_123");
+const discount = await api.discounts.get('disc_123');
 
 // Update discount
-const updated = await api.discounts.update("disc_123", {
-  title: "Updated Discount"
+const updated = await api.discounts.update('disc_123', {
+  title: 'Updated Discount',
 });
 
 // Delete discount
-await api.discounts.delete("disc_123");
+await api.discounts.delete('disc_123');
 
 // Check conflicts
 const conflicts = await api.discounts.checkConflicts({
-  code: "WELCOME10"
+  code: 'WELCOME10',
 });
 
 // Get apply URL
-const applyUrl = await api.discounts.getApplyUrl("disc_123");
+const applyUrl = await api.discounts.getApplyUrl('disc_123');
 ```
 
 ### Report Endpoints
@@ -182,7 +182,7 @@ const campaigns = await api.reports.campaigns();
 
 // Get messaging report
 const messaging = await api.reports.messaging({
-  granularity: "day"
+  granularity: 'day',
 });
 ```
 
@@ -211,9 +211,9 @@ const jsonMetrics = await api.metrics.getJson();
 ```typescript
 try {
   const campaign = await api.campaigns.create({
-    name: "Test Campaign",
-    template: "Hello {{customer_name}}!",
-    audience: { segment: "all" }
+    name: 'Test Campaign',
+    template: 'Hello {{customer_name}}!',
+    audience: { segment: 'all' },
   });
 } catch (error) {
   if (error instanceof ApiError) {
@@ -233,7 +233,7 @@ The SDK provides full TypeScript support with comprehensive type definitions:
 // All responses are fully typed
 const health: HealthResponse = await api.health.get();
 const campaigns: Campaign[] = await api.campaigns.list();
-const discount: Discount = await api.discounts.get("disc_123");
+const discount: Discount = await api.discounts.get('disc_123');
 ```
 
 ## Authentication
@@ -246,9 +246,9 @@ const api = new SmsBlossomApi({
   getAuthHeaders: async () => {
     // Get token from your auth system
     const token = await getAuthToken();
-    
+
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'X-Shop-Domain': 'shop.myshopify.com',
     };
   },
@@ -267,7 +267,7 @@ try {
     // Rate limited - check error.details for retry information
     const retryAfter = error.details?.retry_after;
     if (retryAfter) {
-      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
       // Retry the request
     }
   }
@@ -326,15 +326,15 @@ Implement request deduplication for expensive operations:
 ```typescript
 class ApiClient {
   private pendingRequests = new Map();
-  
+
   async request<T>(key: string, fn: () => Promise<T>): Promise<T> {
     if (this.pendingRequests.has(key)) {
       return this.pendingRequests.get(key);
     }
-    
+
     const promise = fn();
     this.pendingRequests.set(key, promise);
-    
+
     try {
       const result = await promise;
       return result;
@@ -350,33 +350,30 @@ class ApiClient {
 Implement retry logic for transient failures:
 
 ```typescript
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (error instanceof ApiError && error.status < 500) {
         // Don't retry client errors
         throw error;
       }
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
-      
+
       // Exponential backoff
       const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError!;
 }
 ```
@@ -390,36 +387,36 @@ async function createWelcomeCampaign() {
   try {
     // 1. Create discount
     const discount = await api.discounts.create({
-      code: "WELCOME10",
-      title: "Welcome Discount",
-      type: "percentage",
+      code: 'WELCOME10',
+      title: 'Welcome Discount',
+      type: 'percentage',
       value: 10,
-      currency_code: "USD"
+      currency_code: 'USD',
     });
-    
+
     // 2. Create campaign
     const campaign = await api.campaigns.create({
-      name: "Welcome Campaign",
-      template: "Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!",
-      audience: { segment: "new_customers" }
+      name: 'Welcome Campaign',
+      template: 'Welcome {{customer_name}}! Use code {{discount_code}} for {{discount_value}} off!',
+      audience: { segment: 'new_customers' },
     });
-    
+
     // 3. Attach discount
     await api.campaigns.attachDiscount(campaign.id, discount.id);
-    
+
     // 4. Estimate campaign
     const estimate = await api.campaigns.estimate(campaign.id);
     console.log(`Estimated cost: ${estimate.estimated_cost} ${estimate.currency}`);
-    
+
     // 5. Test send
     await api.campaigns.testSend(campaign.id, {
-      phone: "+1234567890",
-      variables: { customer_name: "John Doe" }
+      phone: '+1234567890',
+      variables: { customer_name: 'John Doe' },
     });
-    
+
     // 6. Send campaign
     await api.campaigns.send(campaign.id);
-    
+
     return campaign;
   } catch (error) {
     console.error('Failed to create campaign:', error);
@@ -436,13 +433,13 @@ async function loadDashboard() {
     const [overview, campaigns, messaging] = await Promise.all([
       api.reports.overview(),
       api.reports.campaigns(),
-      api.reports.messaging({ granularity: 'day' })
+      api.reports.messaging({ granularity: 'day' }),
     ]);
-    
+
     return {
       overview,
       campaigns,
-      messaging
+      messaging,
     };
   } catch (error) {
     console.error('Failed to load dashboard:', error);

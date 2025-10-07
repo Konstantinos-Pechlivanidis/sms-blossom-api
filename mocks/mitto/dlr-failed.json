@@ -10,7 +10,7 @@
     "id": "dlr_123456789",
     "status": "failed",
     "failed_at": "2024-01-15T10:30:00Z",
-    "cost": 0.00,
+    "cost": 0.0,
     "currency": "USD"
   }
 }

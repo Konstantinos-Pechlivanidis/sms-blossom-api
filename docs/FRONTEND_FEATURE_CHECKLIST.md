@@ -14,21 +14,25 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 1. Dashboard Overview
 
 ### Required Endpoints
+
 - `GET /reports/overview` - Main dashboard metrics
 - `GET /reports/messaging` - Messaging trends
 - `GET /health` - System health status
 
 ### UI States
+
 - **Loading**: Show skeleton while fetching data
 - **Empty**: No data available (first-time setup)
 - **Error**: API errors with retry option
 - **Success**: Display metrics and charts
 
 ### Feature Flags
+
 - `DASHBOARD_CHARTS_ENABLED` - Enable/disable chart visualizations
 - `REAL_TIME_METRICS` - Show live metrics updates
 
 ### Telemetry
+
 - `dashboard_viewed` - When dashboard is loaded
 - `metric_clicked` - When user clicks on a metric
 - `chart_interacted` - When user interacts with charts
@@ -36,6 +40,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 2. Campaigns Management
 
 ### Required Endpoints
+
 - `GET /campaigns` - List campaigns
 - `POST /campaigns` - Create campaign
 - `GET /campaigns/{id}` - Get campaign details
@@ -46,6 +51,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - `POST /campaigns/{id}/send` - Send campaign
 
 ### UI States
+
 - **List View**: Campaigns table with filters and pagination
 - **Create Form**: Campaign creation wizard
 - **Edit Form**: Campaign editing interface
@@ -56,11 +62,13 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - **Sent**: Campaign completion status
 
 ### Feature Flags
+
 - `CAMPAIGN_TEMPLATES_ENABLED` - Enable template system
 - `CAMPAIGN_SCHEDULING_ENABLED` - Enable campaign scheduling
 - `CAMPAIGN_AUTOMATION_ENABLED` - Enable automation rules
 
 ### Telemetry
+
 - `campaign_created` - When campaign is created
 - `campaign_edited` - When campaign is modified
 - `campaign_sent` - When campaign is sent
@@ -71,6 +79,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 3. Discounts Management
 
 ### Required Endpoints
+
 - `GET /discounts` - List discounts
 - `POST /discounts` - Create discount
 - `GET /discounts/{id}` - Get discount details
@@ -80,6 +89,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - `GET /discounts/{id}/apply-url` - Get apply URL
 
 ### UI States
+
 - **List View**: Discounts table with status indicators
 - **Create Form**: Discount creation form
 - **Edit Form**: Discount editing interface
@@ -87,10 +97,12 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - **Apply URL**: URL generation and testing
 
 ### Feature Flags
+
 - `DISCOUNT_AUTOMATION_ENABLED` - Enable discount automation
 - `DISCOUNT_CONFLICTS_ENABLED` - Enable conflict detection
 
 ### Telemetry
+
 - `discount_created` - When discount is created
 - `discount_edited` - When discount is modified
 - `discount_deleted` - When discount is deleted
@@ -100,12 +112,14 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 4. Templates System
 
 ### Required Endpoints
+
 - `POST /templates/preview` - Preview template
 - `POST /templates/validate` - Validate template
 - `GET /templates/variables/{trigger}` - Get trigger variables
 - `GET /templates/triggers` - Get available triggers
 
 ### UI States
+
 - **Template Editor**: Rich text editor with Liquid syntax
 - **Variable Picker**: Available variables for current trigger
 - **Preview**: Rendered template preview
@@ -113,11 +127,13 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - **SMS Segments**: Character count and segment information
 
 ### Feature Flags
+
 - `TEMPLATE_LIQUID_ENABLED` - Enable Liquid templating
 - `TEMPLATE_VARIABLES_ENABLED` - Enable variable system
 - `TEMPLATE_VALIDATION_ENABLED` - Enable template validation
 
 ### Telemetry
+
 - `template_edited` - When template is modified
 - `template_previewed` - When template is previewed
 - `template_validated` - When template is validated
@@ -127,19 +143,23 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 5. Settings Configuration
 
 ### Required Endpoints
+
 - `GET /settings` - Get current settings
 - `PUT /settings` - Update settings
 
 ### UI States
+
 - **Settings Form**: Configuration form with sections
 - **Validation**: Settings validation and errors
 - **Saved**: Success confirmation
 
 ### Feature Flags
+
 - `SETTINGS_ADVANCED_ENABLED` - Enable advanced settings
 - `SETTINGS_QUIET_HOURS_ENABLED` - Enable quiet hours configuration
 
 ### Telemetry
+
 - `settings_viewed` - When settings page is loaded
 - `settings_saved` - When settings are saved
 - `setting_changed` - When individual setting is modified
@@ -147,6 +167,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 6. Reports and Analytics
 
 ### Required Endpoints
+
 - `GET /reports/overview` - Overview metrics
 - `GET /reports/campaigns` - Campaign performance
 - `GET /reports/messaging` - Messaging analytics
@@ -154,17 +175,20 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 - `GET /metrics` - System metrics
 
 ### UI States
+
 - **Report Dashboard**: Charts and metrics display
 - **Date Range Picker**: Time period selection
 - **Export**: Report export functionality
 - **Real-time**: Live metrics updates
 
 ### Feature Flags
+
 - `REPORTS_EXPORT_ENABLED` - Enable report export
 - `REPORTS_REAL_TIME_ENABLED` - Enable real-time updates
 - `REPORTS_ADVANCED_ENABLED` - Enable advanced analytics
 
 ### Telemetry
+
 - `report_viewed` - When report is viewed
 - `report_exported` - When report is exported
 - `date_range_changed` - When date range is modified
@@ -173,22 +197,26 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 7. App Proxy Integration
 
 ### Required Endpoints
+
 - `POST /proxy/consent` - Collect consent
 - `POST /proxy/unsubscribe` - Handle unsubscribe
 - `POST /proxy/back-in-stock/interest` - Back in stock interest
 
 ### UI States
+
 - **Consent Form**: SMS consent collection
 - **Unsubscribe**: Unsubscribe confirmation
 - **Back in Stock**: Interest collection form
 - **Success**: Confirmation messages
 
 ### Feature Flags
+
 - `PROXY_CONSENT_ENABLED` - Enable consent collection
 - `PROXY_UNSUBSCRIBE_ENABLED` - Enable unsubscribe handling
 - `PROXY_BACK_IN_STOCK_ENABLED` - Enable back in stock feature
 
 ### Telemetry
+
 - `consent_collected` - When consent is given
 - `unsubscribe_processed` - When unsubscribe is processed
 - `back_in_stock_interest` - When interest is expressed
@@ -196,19 +224,23 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 8. Error Handling
 
 ### Required Endpoints
+
 - All endpoints with proper error responses
 
 ### UI States
+
 - **401 Unauthorized**: Redirect to login
 - **409 Shop Not Installed**: Show installation prompt
 - **429 Rate Limited**: Show rate limit message
 - **500 Server Error**: Show error with retry option
 
 ### Feature Flags
+
 - `ERROR_RETRY_ENABLED` - Enable automatic retry
 - `ERROR_REPORTING_ENABLED` - Enable error reporting
 
 ### Telemetry
+
 - `error_occurred` - When error is encountered
 - `error_retried` - When error is retried
 - `error_reported` - When error is reported
@@ -216,20 +248,24 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 9. Authentication and Security
 
 ### Required Endpoints
+
 - JWT token validation on all protected endpoints
 - Shop scoping validation
 
 ### UI States
+
 - **Authenticated**: Normal app interface
 - **Unauthenticated**: Login prompt
 - **Shop Not Installed**: Installation guide
 - **Session Expired**: Token renewal prompt
 
 ### Feature Flags
+
 - `AUTH_AUTO_RENEWAL_ENABLED` - Enable automatic token renewal
 - `AUTH_STRICT_MODE_ENABLED` - Enable strict authentication
 
 ### Telemetry
+
 - `auth_successful` - When authentication succeeds
 - `auth_failed` - When authentication fails
 - `token_renewed` - When token is renewed
@@ -238,20 +274,24 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## 10. Performance and Optimization
 
 ### Required Endpoints
+
 - Cached endpoints with proper cache headers
 - Health check endpoints for monitoring
 
 ### UI States
+
 - **Loading**: Skeleton screens and spinners
 - **Cached**: Fast loading from cache
 - **Offline**: Offline state handling
 
 ### Feature Flags
+
 - `CACHE_ENABLED` - Enable client-side caching
 - `OFFLINE_MODE_ENABLED` - Enable offline functionality
 - `PERFORMANCE_MONITORING_ENABLED` - Enable performance tracking
 
 ### Telemetry
+
 - `page_load_time` - Page load performance
 - `api_response_time` - API response times
 - `cache_hit_rate` - Cache hit rates
@@ -260,6 +300,7 @@ The frontend is a Shopify embedded app that communicates with the SMS Blossom ba
 ## Implementation Notes
 
 ### Environment Variables
+
 ```bash
 # Required for all features
 VITE_API_BASE_URL=https://api.sms-blossom.com
@@ -278,23 +319,25 @@ VITE_PERFORMANCE_MONITORING_ENABLED=true
 ```
 
 ### SDK Usage
+
 ```typescript
 import { SmsBlossomClient } from './sdk';
 
 const client = new SmsBlossomClient({
   baseUrl: process.env.VITE_API_BASE_URL,
   shopDomain: process.env.VITE_SHOP_DOMAIN,
-  token: sessionToken
+  token: sessionToken,
 });
 
 // Example: Get dashboard data
 const overview = await client.reports.getOverview({
   from: '2024-01-01T00:00:00Z',
-  to: '2024-01-31T23:59:59Z'
+  to: '2024-01-31T23:59:59Z',
 });
 ```
 
 ### Error Handling
+
 ```typescript
 try {
   const result = await client.campaigns.create(campaignData);
@@ -316,6 +359,7 @@ try {
 ```
 
 ### Caching Strategy
+
 ```typescript
 // Cache reports for 5 minutes
 const cacheKey = `reports:overview:${dateRange}`;

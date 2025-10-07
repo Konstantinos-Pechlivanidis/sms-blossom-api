@@ -31,25 +31,25 @@ Shopify Webhook → HMAC Verification → Event Storage → Queue Processing →
 
 ### Supported Topics
 
-| Topic | Description | Trigger Variables |
-|-------|-------------|-------------------|
-| `orders/create` | New order created | `order_number`, `order_total`, `customer_name`, `customer_email`, `customer_phone`, `order_url` |
-| `orders/paid` | Order payment completed | `order_number`, `order_total`, `currency`, `customer_name`, `customer_email`, `customer_phone`, `order_url` |
-| `checkouts/create` | Checkout session created | `checkout_id`, `cart_total`, `customer_name`, `customer_email`, `recovery_url` |
-| `checkouts/update` | Checkout session updated | `checkout_id`, `cart_total`, `customer_name`, `customer_email`, `recovery_url` |
-| `fulfillments/create` | Fulfillment created | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name` |
-| `fulfillments/update` | Fulfillment updated | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name` |
-| `customers/create` | New customer created | `customer_name`, `customer_email`, `customer_phone` |
-| `customers/update` | Customer updated | `customer_name`, `customer_email`, `customer_phone` |
-| `inventory_levels/update` | Inventory level changed | `product_title`, `variant_title`, `inventory_quantity` |
+| Topic                     | Description              | Trigger Variables                                                                                           |
+| ------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `orders/create`           | New order created        | `order_number`, `order_total`, `customer_name`, `customer_email`, `customer_phone`, `order_url`             |
+| `orders/paid`             | Order payment completed  | `order_number`, `order_total`, `currency`, `customer_name`, `customer_email`, `customer_phone`, `order_url` |
+| `checkouts/create`        | Checkout session created | `checkout_id`, `cart_total`, `customer_name`, `customer_email`, `recovery_url`                              |
+| `checkouts/update`        | Checkout session updated | `checkout_id`, `cart_total`, `customer_name`, `customer_email`, `recovery_url`                              |
+| `fulfillments/create`     | Fulfillment created      | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name`                               |
+| `fulfillments/update`     | Fulfillment updated      | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name`                               |
+| `customers/create`        | New customer created     | `customer_name`, `customer_email`, `customer_phone`                                                         |
+| `customers/update`        | Customer updated         | `customer_name`, `customer_email`, `customer_phone`                                                         |
+| `inventory_levels/update` | Inventory level changed  | `product_title`, `variant_title`, `inventory_quantity`                                                      |
 
 ### GDPR Topics
 
-| Topic | Description | Action |
-|-------|-------------|--------|
-| `customers/data_request` | Customer data request | Export customer data |
-| `customers/redact` | Customer data deletion | Delete customer data |
-| `shop/redact` | Shop data deletion | Delete shop data |
+| Topic                    | Description            | Action               |
+| ------------------------ | ---------------------- | -------------------- |
+| `customers/data_request` | Customer data request  | Export customer data |
+| `customers/redact`       | Customer data deletion | Delete customer data |
+| `shop/redact`            | Shop data deletion     | Delete shop data     |
 
 ## Webhook Endpoints
 
@@ -64,11 +64,13 @@ Shopify Webhook → HMAC Verification → Event Storage → Queue Processing →
 **Authentication**: HMAC signature verification
 
 **Headers Required**:
+
 - `X-Shopify-Hmac-Sha256`: Webhook signature
 - `X-Shopify-Shop-Domain`: Shop domain
 - `X-Shopify-Topic`: Event topic
 
 **Example Request**:
+
 ```bash
 curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
   -H "X-Shopify-Hmac-Sha256: <signature>" \
@@ -79,6 +81,7 @@ curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -98,9 +101,11 @@ curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
 **Authentication**: HMAC signature verification
 
 **Headers Required**:
+
 - `X-Mitto-Signature`: Delivery receipt signature
 
 **Request Body**:
+
 ```json
 {
   "message_id": "msg_123456",
@@ -113,6 +118,7 @@ curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -127,6 +133,7 @@ curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
 **Authentication**: HMAC signature verification
 
 **Request Body**:
+
 ```json
 {
   "message_id": "inbound_123",
@@ -138,6 +145,7 @@ curl -X POST https://api.sms-blossom.com/webhooks/shopify/orders/paid \
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -159,23 +167,23 @@ interface EventContext {
   customer_name: string;
   customer_email?: string;
   customer_phone?: string;
-  
+
   // Order-specific
   order_number?: string;
   order_total?: string;
   currency?: string;
   order_url?: string;
-  
+
   // Checkout-specific
   checkout_id?: string;
   cart_total?: string;
   recovery_url?: string;
-  
+
   // Fulfillment-specific
   tracking_number?: string;
   carrier?: string;
   tracking_url?: string;
-  
+
   // Inventory-specific
   product_title?: string;
   variant_title?: string;
@@ -186,6 +194,7 @@ interface EventContext {
 ### Event Storage
 
 Events are stored in the database with:
+
 - **Deduplication**: Events are deduplicated by `shop:topic:objectId`
 - **Raw Payload**: Original webhook payload is stored
 - **Processing Status**: Tracked through queue system
@@ -194,21 +203,25 @@ Events are stored in the database with:
 ### Queue Processing
 
 #### Events Queue
+
 - **Purpose**: Initial webhook processing and normalization
 - **Processor**: `processEvent()` function
 - **Output**: Normalized context sent to automations queue
 
 #### Automations Queue
+
 - **Purpose**: Evaluate automation rules against events
 - **Processor**: `evaluateAutomation()` function
 - **Output**: SMS jobs sent to delivery queue
 
 #### Delivery Queue
+
 - **Purpose**: Send SMS messages via Mitto
 - **Processor**: `processDelivery()` function
 - **Output**: SMS delivery status updates
 
 #### Housekeeping Queue
+
 - **Purpose**: Cleanup and maintenance tasks
 - **Processor**: `processHousekeeping()` function
 - **Tasks**: Clean old messages, retry failed messages, rollup reports
@@ -217,18 +230,19 @@ Events are stored in the database with:
 
 ### Trigger Types
 
-| Trigger | Description | Context Variables |
-|---------|-------------|-------------------|
-| `abandoned_checkout` | Checkout abandoned | `checkout_id`, `cart_total`, `customer_name`, `recovery_url` |
-| `order_created` | Order created | `order_number`, `order_total`, `customer_name`, `order_url` |
-| `order_paid` | Order paid | `order_number`, `order_total`, `currency`, `customer_name`, `order_url` |
-| `fulfillment_update` | Fulfillment updated | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name` |
-| `welcome` | New customer | `customer_name`, `customer_email`, `customer_phone` |
-| `back_in_stock` | Product back in stock | `product_title`, `variant_title`, `inventory_quantity` |
+| Trigger              | Description           | Context Variables                                                             |
+| -------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `abandoned_checkout` | Checkout abandoned    | `checkout_id`, `cart_total`, `customer_name`, `recovery_url`                  |
+| `order_created`      | Order created         | `order_number`, `order_total`, `customer_name`, `order_url`                   |
+| `order_paid`         | Order paid            | `order_number`, `order_total`, `currency`, `customer_name`, `order_url`       |
+| `fulfillment_update` | Fulfillment updated   | `order_number`, `tracking_number`, `carrier`, `tracking_url`, `customer_name` |
+| `welcome`            | New customer          | `customer_name`, `customer_email`, `customer_phone`                           |
+| `back_in_stock`      | Product back in stock | `product_title`, `variant_title`, `inventory_quantity`                        |
 
 ### Automation Rules
 
 Automations are evaluated based on:
+
 - **Trigger Match**: Event topic matches automation trigger
 - **Consent Check**: Customer has SMS consent
 - **Quiet Hours**: Outside configured quiet hours
@@ -239,12 +253,12 @@ Automations are evaluated based on:
 
 ### Status Mapping
 
-| Mitto Status | Internal Status | Description |
-|--------------|-----------------|-------------|
-| `delivered` | `delivered` | Message successfully delivered |
-| `failed` | `failed` | Message delivery failed |
-| `pending` | `sent` | Message sent, awaiting delivery |
-| `expired` | `failed` | Message expired |
+| Mitto Status | Internal Status | Description                     |
+| ------------ | --------------- | ------------------------------- |
+| `delivered`  | `delivered`     | Message successfully delivered  |
+| `failed`     | `failed`        | Message delivery failed         |
+| `pending`    | `sent`          | Message sent, awaiting delivery |
+| `expired`    | `failed`        | Message expired                 |
 
 ### Message State Transitions
 
@@ -266,11 +280,11 @@ queued → sent → delivered
 
 ### Supported Commands
 
-| Command | Action | Response |
-|---------|--------|----------|
-| `STOP` | Unsubscribe customer | Confirmation message |
-| `HELP` | Send help information | Help message |
-| `START` | Resubscribe customer | Welcome message |
+| Command | Action                | Response             |
+| ------- | --------------------- | -------------------- |
+| `STOP`  | Unsubscribe customer  | Confirmation message |
+| `HELP`  | Send help information | Help message         |
+| `START` | Resubscribe customer  | Welcome message      |
 
 ### Inbound Processing Flow
 
@@ -285,13 +299,13 @@ queued → sent → delivered
 
 ### Webhook Errors
 
-| Error | Status | Description |
-|-------|--------|-------------|
-| `invalid_signature` | 401 | HMAC signature verification failed |
-| `missing_headers` | 400 | Required headers missing |
-| `invalid_payload` | 400 | Malformed request body |
-| `duplicate_event` | 200 | Event already processed |
-| `processing_error` | 500 | Internal processing error |
+| Error               | Status | Description                        |
+| ------------------- | ------ | ---------------------------------- |
+| `invalid_signature` | 401    | HMAC signature verification failed |
+| `missing_headers`   | 400    | Required headers missing           |
+| `invalid_payload`   | 400    | Malformed request body             |
+| `duplicate_event`   | 200    | Event already processed            |
+| `processing_error`  | 500    | Internal processing error          |
 
 ### Retry Logic
 
@@ -302,6 +316,7 @@ queued → sent → delivered
 ### Dead Letter Queue
 
 Failed jobs are moved to DLQ after max retries:
+
 - **Events DLQ**: Failed event processing jobs
 - **Delivery DLQ**: Failed SMS delivery jobs
 
@@ -317,6 +332,7 @@ Failed jobs are moved to DLQ after max retries:
 ### Logging
 
 All webhook processing is logged with:
+
 - **Request ID**: Unique identifier for request tracing
 - **Shop Domain**: Shop identifier
 - **Event Topic**: Webhook topic

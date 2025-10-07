@@ -22,18 +22,21 @@ The SMS Blossom template system uses LiquidJS with custom filters and strict var
 **Description**: Sent when a customer abandons their checkout
 
 **Required Variables**:
+
 - `recovery_url`: Link to complete checkout
 - `checkout_id`: Unique checkout identifier
 
 **Optional Variables**:
+
 - `customer_name`: Customer's full name
 - `cart_total`: Total cart value
 - `currency`: Currency code (e.g., "USD")
 - `shop_name`: Store name
 
 **Example Template**:
+
 ```liquid
-Hi {{customer_name | default: "there"}}! 
+Hi {{customer_name | default: "there"}}!
 
 You left items in your cart worth {{cart_total | money: currency}}. Complete your purchase: {{recovery_url | shortlink}}
 
@@ -46,16 +49,19 @@ You left items in your cart worth {{cart_total | money: currency}}. Complete you
 **Description**: Sent when a new order is created
 
 **Required Variables**:
+
 - `order_number`: Order number
 - `order_total`: Order total amount
 
 **Optional Variables**:
+
 - `customer_name`: Customer's full name
 - `currency`: Currency code
 - `shop_name`: Store name
 - `order_url`: Link to order details
 
 **Example Template**:
+
 ```liquid
 Thank you for your order #{{order_number}}!
 
@@ -71,10 +77,12 @@ View order: {{order_url | shortlink}}
 **Description**: Sent when an order payment is completed
 
 **Required Variables**:
+
 - `order_number`: Order number
 - `order_total`: Order total amount
 
 **Optional Variables**:
+
 - `customer_name`: Customer's full name
 - `currency`: Currency code
 - `shop_name`: Store name
@@ -82,6 +90,7 @@ View order: {{order_url | shortlink}}
 - `tracking_number`: Tracking number (if available)
 
 **Example Template**:
+
 ```liquid
 Payment confirmed for order #{{order_number}}!
 
@@ -97,16 +106,19 @@ Total: {{order_total | money: currency}}
 **Description**: Sent when order fulfillment is updated
 
 **Required Variables**:
+
 - `order_number`: Order number
 - `tracking_number`: Tracking number
 
 **Optional Variables**:
+
 - `customer_name`: Customer's full name
 - `carrier`: Shipping carrier
 - `tracking_url`: Tracking URL
 - `shop_name`: Store name
 
 **Example Template**:
+
 ```liquid
 Your order #{{order_number}} has shipped!
 
@@ -123,14 +135,17 @@ Tracking: {{tracking_number}}
 **Description**: Sent to new customers
 
 **Required Variables**:
+
 - `customer_name`: Customer's full name
 
 **Optional Variables**:
+
 - `shop_name`: Store name
 - `discount_code`: Welcome discount code
 - `discount_value`: Discount value
 
 **Example Template**:
+
 ```liquid
 Welcome to {{shop_name}}, {{customer_name}}!
 
@@ -145,15 +160,18 @@ Thanks for joining us!
 **Description**: Sent when a product is back in stock
 
 **Required Variables**:
+
 - `product_name`: Product name
 - `product_url`: Product URL
 
 **Optional Variables**:
+
 - `customer_name`: Customer's full name
 - `shop_name`: Store name
 - `inventory_count`: Available quantity
 
 **Example Template**:
+
 ```liquid
 {{product_name}} is back in stock!
 
@@ -170,11 +188,13 @@ Shop now: {{product_url | shortlink}}
 **Usage**: `{{value | money: currency, locale}}`
 
 **Parameters**:
+
 - `value`: Number or string to format
 - `currency`: Currency code (default: "USD")
 - `locale`: Locale for formatting (default: "en-US")
 
 **Examples**:
+
 ```liquid
 {{order_total | money}}                    <!-- $99.99 -->
 {{order_total | money: "EUR"}}             <!-- €99.99 -->
@@ -186,18 +206,21 @@ Shop now: {{product_url | shortlink}}
 **Usage**: `{{date | date: format, timezone, locale}}`
 
 **Parameters**:
+
 - `date`: Date string or Date object
 - `format`: Date format (default: "short")
 - `timezone`: Timezone (default: "UTC")
 - `locale`: Locale for formatting (default: "en-US")
 
 **Formats**:
+
 - `short`: 1/15/2024
 - `long`: January 15, 2024
 - `time`: 10:30 AM
 - `datetime`: 1/15/2024, 10:30 AM
 
 **Examples**:
+
 ```liquid
 {{order_date | date}}                      <!-- 1/15/2024 -->
 {{order_date | date: "long"}}              <!-- January 15, 2024 -->
@@ -211,6 +234,7 @@ Shop now: {{product_url | shortlink}}
 **Description**: Creates shortened URLs for SMS
 
 **Examples**:
+
 ```liquid
 {{product_url | shortlink}}                <!-- https://short.ly/abc123 -->
 {{recovery_url | shortlink}}               <!-- https://short.ly/def456 -->
@@ -223,6 +247,7 @@ Shop now: {{product_url | shortlink}}
 **Description**: Provides fallback value for null/undefined variables
 
 **Examples**:
+
 ```liquid
 {{customer_name | default: "Valued Customer"}}
 {{discount_code | default: "SAVE10"}}
@@ -232,22 +257,27 @@ Shop now: {{product_url | shortlink}}
 ### Text Filters
 
 #### Titlecase Filter
+
 **Usage**: `{{text | titlecase}}`
 **Description**: Converts text to title case
 
 #### Upper Filter
+
 **Usage**: `{{text | upper}}`
 **Description**: Converts text to uppercase
 
 #### Lower Filter
+
 **Usage**: `{{text | lower}}`
 **Description**: Converts text to lowercase
 
 #### Truncate Filter
+
 **Usage**: `{{text | truncate: length, suffix}}`
 **Description**: Truncates text to specified length
 
 **Examples**:
+
 ```liquid
 {{product_name | titlecase}}               <!-- "Amazing Product" -->
 {{discount_code | upper}}                  <!-- "SAVE10" -->
@@ -304,9 +334,7 @@ interface TemplateValidation {
 ```json
 {
   "valid": true,
-  "warnings": [
-    "SMS will be split into 2 parts (280 characters)"
-  ],
+  "warnings": ["SMS will be split into 2 parts (280 characters)"],
   "variables_used": ["customer_name", "order_total", "currency"],
   "missing_required": [],
   "unknown_variables": []
@@ -318,7 +346,7 @@ interface TemplateValidation {
 ### Abandoned Checkout Recovery
 
 ```liquid
-Hi {{customer_name | default: "there"}}! 
+Hi {{customer_name | default: "there"}}!
 
 You left items worth {{cart_total | money: currency}} in your cart. Complete your purchase: {{recovery_url | shortlink}}
 
@@ -411,10 +439,10 @@ Shop now: {{product_url | shortlink}}
 
 ```typescript
 const result = await api.templates.preview({
-  template: "Hello {{customer_name}}!",
+  template: 'Hello {{customer_name}}!',
   variables: {
-    customer_name: "John Doe"
-  }
+    customer_name: 'John Doe',
+  },
 });
 
 console.log(result.rendered); // "Hello John Doe!"
@@ -425,8 +453,8 @@ console.log(result.warnings); // []
 
 ```typescript
 const validation = await api.templates.validate({
-  template: "Hello {{customer_name}}!",
-  trigger: "welcome"
+  template: 'Hello {{customer_name}}!',
+  trigger: 'welcome',
 });
 
 console.log(validation.valid); // true
@@ -436,7 +464,7 @@ console.log(validation.variables_used); // ["customer_name"]
 ### Get Variables
 
 ```typescript
-const variables = await api.templates.getVariables("abandoned_checkout");
+const variables = await api.templates.getVariables('abandoned_checkout');
 
 console.log(variables.required); // ["recovery_url", "checkout_id"]
 console.log(variables.optional); // ["customer_name", "cart_total"]

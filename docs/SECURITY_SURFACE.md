@@ -22,12 +22,12 @@ The SMS Blossom backend implements a comprehensive security model with multiple 
 
 ```typescript
 interface JWTClaims {
-  sub: string;           // User ID
-  shop: string;          // Shop domain
-  iat: number;           // Issued at
-  exp: number;           // Expires at
-  scope: string[];       // Permissions
-  iss: string;           // Issuer
+  sub: string; // User ID
+  shop: string; // Shop domain
+  iat: number; // Issued at
+  exp: number; // Expires at
+  scope: string[]; // Permissions
+  iss: string; // Issuer
 }
 ```
 
@@ -59,7 +59,8 @@ const tokenExpiry = jwt.decode(token).exp * 1000;
 const now = Date.now();
 const timeUntilExpiry = tokenExpiry - now;
 
-if (timeUntilExpiry < 300000) { // 5 minutes
+if (timeUntilExpiry < 300000) {
+  // 5 minutes
   // Renew token
   const newToken = await renewToken();
 }
@@ -85,11 +86,11 @@ if (session.valid) {
 
 ```typescript
 interface ShopifySession {
-  shop: string;           // Shop domain
-  user: string;           // User email
-  expires: number;        // Expiration timestamp
-  scope: string[];        // Granted scopes
-  access_token: string;   // Access token
+  shop: string; // Shop domain
+  user: string; // User email
+  expires: number; // Expiration timestamp
+  scope: string[]; // Granted scopes
+  access_token: string; // Access token
 }
 ```
 
@@ -107,9 +108,7 @@ All authenticated endpoints require shop context:
 // 2. X-Shop-Domain header
 // 3. Query parameter
 
-const shopDomain = req.auth?.shop || 
-                   req.get('X-Shop-Domain') || 
-                   req.query.shop;
+const shopDomain = req.auth?.shop || req.get('X-Shop-Domain') || req.query.shop;
 ```
 
 #### Shop Validation
@@ -117,13 +116,13 @@ const shopDomain = req.auth?.shop ||
 ```typescript
 // Validate shop is installed
 const shop = await prisma.shop.findUnique({
-  where: { domain: shopDomain }
+  where: { domain: shopDomain },
 });
 
 if (!shop) {
   return res.status(409).json({
     error: 'shop_not_installed',
-    message: 'Shop not installed. Please install the app first.'
+    message: 'Shop not installed. Please install the app first.',
   });
 }
 ```
@@ -134,14 +133,14 @@ if (!shop) {
 // Shop scoping middleware
 export function shopScopingMiddleware(req, res, next) {
   const shopDomain = resolveShop(req);
-  
+
   if (!shopDomain) {
     return res.status(400).json({
       error: 'missing_shop_domain',
-      message: 'Shop domain is required'
+      message: 'Shop domain is required',
     });
   }
-  
+
   // Attach shop context to request
   req.shop = { domain: shopDomain };
   next();
@@ -152,13 +151,13 @@ export function shopScopingMiddleware(req, res, next) {
 
 #### Permission Scopes
 
-| Scope | Description | Endpoints |
-|-------|-------------|-----------|
-| `read:campaigns` | View campaigns | `GET /campaigns` |
+| Scope             | Description           | Endpoints                               |
+| ----------------- | --------------------- | --------------------------------------- |
+| `read:campaigns`  | View campaigns        | `GET /campaigns`                        |
 | `write:campaigns` | Create/edit campaigns | `POST /campaigns`, `PUT /campaigns/:id` |
-| `read:reports` | View reports | `GET /reports/*` |
-| `write:settings` | Modify settings | `PUT /settings` |
-| `admin:metrics` | Access metrics | `GET /metrics` |
+| `read:reports`    | View reports          | `GET /reports/*`                        |
+| `write:settings`  | Modify settings       | `PUT /settings`                         |
+| `admin:metrics`   | Access metrics        | `GET /metrics`                          |
 
 #### Scope Validation
 
@@ -167,19 +166,17 @@ export function shopScopingMiddleware(req, res, next) {
 function requireScopes(requiredScopes: string[]) {
   return (req, res, next) => {
     const userScopes = req.auth?.scope || [];
-    const hasRequiredScopes = requiredScopes.every(scope => 
-      userScopes.includes(scope)
-    );
-    
+    const hasRequiredScopes = requiredScopes.every((scope) => userScopes.includes(scope));
+
     if (!hasRequiredScopes) {
       return res.status(403).json({
         error: 'insufficient_scope',
         message: 'Insufficient permissions',
         required: requiredScopes,
-        granted: userScopes
+        granted: userScopes,
       });
     }
-    
+
     next();
   };
 }
@@ -193,11 +190,11 @@ The rate limiting system uses a token bucket algorithm with Redis:
 
 #### Rate Limit Configuration
 
-| Endpoint Type | Burst Limit | Sustained Limit | Window |
-|---------------|-------------|-----------------|--------|
-| Admin API | 60 requests | 600 requests/minute | 1 minute |
-| Public API | 10 requests | 100 requests/minute | 1 minute |
-| Webhooks | 1000 requests | 10000 requests/minute | 1 minute |
+| Endpoint Type | Burst Limit   | Sustained Limit       | Window   |
+| ------------- | ------------- | --------------------- | -------- |
+| Admin API     | 60 requests   | 600 requests/minute   | 1 minute |
+| Public API    | 10 requests   | 100 requests/minute   | 1 minute |
+| Webhooks      | 1000 requests | 10000 requests/minute | 1 minute |
 
 #### Rate Limit Headers
 
@@ -214,31 +211,31 @@ Retry-After: 60
 // Rate limiting middleware
 export function rateLimitMiddleware(options = {}) {
   const {
-    windowMs = 60000,        // 1 minute window
-    maxRequests = 60,        // max requests per window
-    burstLimit = 10,         // burst allowance
+    windowMs = 60000, // 1 minute window
+    maxRequests = 60, // max requests per window
+    burstLimit = 10, // burst allowance
     keyGenerator = (req) => {
       const shopId = req.shop?.id || 'no-shop';
       const ip = req.ip || 'unknown';
       return `rate_limit:${shopId}:${ip}`;
-    }
+    },
   } = options;
-  
+
   return async (req, res, next) => {
     const key = keyGenerator(req);
     const redis = getRedisConnection();
-    
+
     // Check rate limit
     const allowed = await checkRateLimit(redis, key, maxRequests, burstLimit);
-    
+
     if (!allowed) {
       return res.status(429).json({
         error: 'rate_limit_exceeded',
         message: 'Too many requests',
-        retry_after: 60
+        retry_after: 60,
       });
     }
-    
+
     next();
   };
 }
@@ -267,9 +264,9 @@ const createCampaignSchema = z.object({
   template: z.string().min(1).max(1000),
   audience: z.object({
     segment: z.string().optional(),
-    filter: z.object({}).optional()
+    filter: z.object({}).optional(),
   }),
-  scheduled_at: z.string().datetime().optional()
+  scheduled_at: z.string().datetime().optional(),
 });
 
 // Validation middleware
@@ -283,7 +280,7 @@ export function validateRequest(schema: z.ZodSchema) {
       return res.status(400).json({
         error: 'validation_error',
         message: 'Invalid request data',
-        details: error.errors
+        details: error.errors,
       });
     }
   };
@@ -300,8 +297,8 @@ export const commonSchemas = {
   shopDomain: z.string().regex(/^[a-zA-Z0-9-]+\.myshopify\.com$/),
   dateRange: z.object({
     from: z.string().datetime(),
-    to: z.string().datetime()
-  })
+    to: z.string().datetime(),
+  }),
 };
 ```
 
@@ -314,8 +311,8 @@ All database queries use Prisma ORM with parameterized queries:
 const contacts = await prisma.contact.findMany({
   where: {
     shopId: shopId,
-    phoneE164: phoneE164
-  }
+    phoneE164: phoneE164,
+  },
 });
 
 // Never use raw SQL with user input
@@ -340,7 +337,7 @@ function generateCsrfToken(): string {
 res.cookie('csrf-token', csrfToken, {
   httpOnly: false,
   secure: true,
-  sameSite: 'strict'
+  sameSite: 'strict',
 });
 ```
 
@@ -351,14 +348,14 @@ res.cookie('csrf-token', csrfToken, {
 export function csrfMiddleware(req, res, next) {
   const cookieToken = req.cookies['csrf-token'];
   const headerToken = req.get('X-CSRF-Token');
-  
+
   if (!cookieToken || !headerToken || cookieToken !== headerToken) {
     return res.status(403).json({
       error: 'csrf_token_mismatch',
-      message: 'CSRF token validation failed'
+      message: 'CSRF token validation failed',
     });
   }
-  
+
   next();
 }
 ```
@@ -377,40 +374,40 @@ export function encryptPII(data: string, key: string): string {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipher('aes-256-gcm', key);
   cipher.setAAD(Buffer.from('sms-blossom'));
-  
+
   let encrypted = cipher.update(data, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   const authTag = cipher.getAuthTag();
-  
+
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
 // Decrypt PII data
 export function decryptPII(encryptedData: string, key: string): string {
   const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
-  
+
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
-  
+
   const decipher = crypto.createDecipher('aes-256-gcm', key);
   decipher.setAAD(Buffer.from('sms-blossom'));
   decipher.setAuthTag(authTag);
-  
+
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 ```
 
 #### Encrypted Fields
 
-| Field | Encryption | Purpose |
-|-------|------------|---------|
-| `phone_ciphertext` | AES-256-GCM | Customer phone numbers |
+| Field              | Encryption  | Purpose                  |
+| ------------------ | ----------- | ------------------------ |
+| `phone_ciphertext` | AES-256-GCM | Customer phone numbers   |
 | `email_ciphertext` | AES-256-GCM | Customer email addresses |
-| `customer_data` | AES-256-GCM | Additional customer data |
+| `customer_data`    | AES-256-GCM | Additional customer data |
 
 ## Audit Logging
 
@@ -437,17 +434,17 @@ interface AuditLog {
 
 #### Logged Events
 
-| Event | Description | Data Logged |
-|-------|-------------|-------------|
-| `auth.login` | User login | User ID, IP, User Agent |
-| `auth.logout` | User logout | User ID, IP |
-| `auth.token_renewal` | Token renewal | User ID, IP |
-| `campaign.create` | Campaign creation | Campaign ID, Name |
-| `campaign.send` | Campaign sending | Campaign ID, Audience Size |
-| `discount.create` | Discount creation | Discount ID, Code |
-| `settings.update` | Settings change | Setting Name, Old Value, New Value |
-| `pii.access` | PII data access | Data Type, Contact ID |
-| `pii.export` | PII data export | Data Type, Contact ID |
+| Event                | Description       | Data Logged                        |
+| -------------------- | ----------------- | ---------------------------------- |
+| `auth.login`         | User login        | User ID, IP, User Agent            |
+| `auth.logout`        | User logout       | User ID, IP                        |
+| `auth.token_renewal` | Token renewal     | User ID, IP                        |
+| `campaign.create`    | Campaign creation | Campaign ID, Name                  |
+| `campaign.send`      | Campaign sending  | Campaign ID, Audience Size         |
+| `discount.create`    | Discount creation | Discount ID, Code                  |
+| `settings.update`    | Settings change   | Setting Name, Old Value, New Value |
+| `pii.access`         | PII data access   | Data Type, Contact ID              |
+| `pii.export`         | PII data export   | Data Type, Contact ID              |
 
 #### Audit Log Implementation
 
@@ -455,22 +452,25 @@ interface AuditLog {
 // Audit logging middleware
 export function auditLoggingMiddleware(req, res, next) {
   const originalSend = res.send;
-  
-  res.send = function(data) {
+
+  res.send = function (data) {
     // Log the request
-    logger.info({
-      action: req.method,
-      resource: req.path,
-      shopId: req.shop?.id,
-      userId: req.auth?.sub,
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      statusCode: res.statusCode
-    }, 'API request completed');
-    
+    logger.info(
+      {
+        action: req.method,
+        resource: req.path,
+        shopId: req.shop?.id,
+        userId: req.auth?.sub,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        statusCode: res.statusCode,
+      },
+      'API request completed',
+    );
+
     originalSend.call(this, data);
   };
-  
+
   next();
 }
 ```
@@ -484,25 +484,26 @@ export function auditLoggingMiddleware(req, res, next) {
 export function securityHeadersMiddleware(req, res, next) {
   // Prevent clickjacking
   res.set('X-Frame-Options', 'DENY');
-  
+
   // Prevent MIME type sniffing
   res.set('X-Content-Type-Options', 'nosniff');
-  
+
   // Enable XSS protection
   res.set('X-XSS-Protection', '1; mode=block');
-  
+
   // Strict Transport Security
   res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  
+
   // Content Security Policy
-  res.set('Content-Security-Policy', 
+  res.set(
+    'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "connect-src 'self' https://api.shopify.com;"
+      "script-src 'self' 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self' https://api.shopify.com;",
   );
-  
+
   next();
 }
 ```
@@ -609,7 +610,7 @@ const securityMetrics = {
   rate_limit_hits: 0,
   csrf_attempts: 0,
   validation_errors: 0,
-  pii_access_count: 0
+  pii_access_count: 0,
 };
 ```
 
