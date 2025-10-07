@@ -1,0 +1,106 @@
+# render.yaml
+# Render.com deployment configuration for SMS Blossom
+
+services:
+  # Web API Service
+  - type: web
+    name: sms-blossom-api
+    env: node
+    plan: starter
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx prisma migrate deploy && node dist/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: QUEUE_DRIVER
+        value: redis
+      - key: REDIS_PREFIX
+        value: smsblossom:prod
+      # Database - set via Render dashboard
+      - key: DATABASE_URL
+        sync: false
+      # Redis - set via Render dashboard  
+      - key: REDIS_URL
+        sync: false
+      # Security - set via Render dashboard
+      - key: WEBHOOK_HMAC_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: HASH_PEPPER
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      # Optional
+      - key: METRICS_TOKEN
+        sync: false
+      - key: APP_PROXY_SUBPATH
+        value: /apps/sms-blossom
+      # External Services - set via Render dashboard
+      - key: MITTO_API_KEY
+        sync: false
+      - key: MITTO_API_URL
+        value: https://api.mitto.com
+      - key: MITTO_CALLBACK_URL
+        sync: false
+      - key: MITTO_HMAC_SECRET
+        sync: false
+      # CORS - set via Render dashboard
+      - key: CORS_ALLOWLIST
+        sync: false
+
+  # Worker Service
+  - type: worker
+    name: sms-blossom-worker
+    env: node
+    plan: starter
+    buildCommand: npm install && npx prisma generate
+    startCommand: node dist/worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: QUEUE_DRIVER
+        value: redis
+      - key: REDIS_PREFIX
+        value: smsblossom:prod
+      # Database - set via Render dashboard
+      - key: DATABASE_URL
+        sync: false
+      # Redis - set via Render dashboard
+      - key: REDIS_URL
+        sync: false
+      # Security - set via Render dashboard
+      - key: WEBHOOK_HMAC_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: HASH_PEPPER
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      # External Services - set via Render dashboard
+      - key: MITTO_API_KEY
+        sync: false
+      - key: MITTO_API_URL
+        value: https://api.mitto.com
+      - key: MITTO_CALLBACK_URL
+        sync: false
+      - key: MITTO_HMAC_SECRET
+        sync: false
+
+databases:
+  # PostgreSQL Database
+  - name: sms-blossom-db
+    plan: starter
+    databaseName: smsblossom
+    user: smsblossom
+
+  # Redis Cache
+  - name: sms-blossom-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
