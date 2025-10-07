@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { getWebhookHmacSecret } from '../config/env.js';
 
-// Verifies Shopify HMAC for webhooks using WEBHOOK_SECRET against raw body
+// Verifies Shopify HMAC for webhooks using canonical WEBHOOK_HMAC_SECRET (with legacy WEBHOOK_SECRET support)
 export function verifyShopifyHmac() {
-  const secret = process.env.WEBHOOK_SECRET;
-  if (!secret) throw new Error('WEBHOOK_SECRET env is required');
+  const secret = getWebhookHmacSecret();
 
   return function shopifyHmacMiddleware(req, res, next) {
     try {
