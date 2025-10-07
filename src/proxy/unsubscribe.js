@@ -41,11 +41,9 @@ router.get('/', async (req, res) => {
 
   // Check Accept header for HTML vs JSON response
   const acceptsHtml = req.get('Accept')?.includes('text/html');
-  
+
   if (acceptsHtml) {
-    res
-      .type('html')
-      .send(`
+    res.type('html').send(`
         <!DOCTYPE html>
         <html lang="en">
         <head>

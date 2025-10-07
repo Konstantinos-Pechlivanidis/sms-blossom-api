@@ -69,5 +69,3 @@ describe('Health Contract Tests', () => {
     expect(response.body.database).toHaveProperty('connected');
   });
 });
-
-

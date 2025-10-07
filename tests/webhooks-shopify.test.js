@@ -538,4 +538,3 @@ describe('Shopify Webhooks', () => {
     });
   });
 });
-

@@ -16,12 +16,16 @@ export function getWebhookHmacSecret() {
   // Fall back to legacy name
   const legacy = process.env.WEBHOOK_SECRET;
   if (legacy) {
-    console.warn('Using legacy WEBHOOK_SECRET environment variable. Please migrate to WEBHOOK_HMAC_SECRET.');
+    console.warn(
+      'Using legacy WEBHOOK_SECRET environment variable. Please migrate to WEBHOOK_HMAC_SECRET.',
+    );
     return legacy;
   }
 
   // Neither is set
-  throw new Error('WEBHOOK_HMAC_SECRET environment variable is required (or legacy WEBHOOK_SECRET)');
+  throw new Error(
+    'WEBHOOK_HMAC_SECRET environment variable is required (or legacy WEBHOOK_SECRET)',
+  );
 }
 
 /**

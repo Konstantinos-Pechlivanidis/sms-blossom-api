@@ -44,10 +44,9 @@ router.get('/', async (req, res) => {
 
     // Check Accept header for HTML vs JSON response
     const acceptsHtml = req.get('Accept')?.includes('text/html');
-    
+
     if (acceptsHtml) {
-      return res.status(200)
-        .send(`<!DOCTYPE html>
+      return res.status(200).send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -97,7 +96,7 @@ router.get('/', async (req, res) => {
       return res.status(200).json({
         success: true,
         message: 'You have been unsubscribed from SMS marketing messages',
-        unsubscribed_at: new Date().toISOString()
+        unsubscribed_at: new Date().toISOString(),
       });
     }
   } catch {

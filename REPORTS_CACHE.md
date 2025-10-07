@@ -311,5 +311,3 @@ expect(response.headers['x-cache']).toBe('hit'); // Second request
    - Monitor hit rates
    - Optimize cache keys
    - Use appropriate TTLs
-
-

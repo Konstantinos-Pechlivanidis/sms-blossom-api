@@ -13,28 +13,28 @@ export function normalizePhone(phone) {
 
   // Remove all non-digit characters
   const digits = phone.replace(/\D/g, '');
-  
+
   // Handle different formats
   if (digits.length === 10 && digits.startsWith('3')) {
     // Greek mobile: 3XXXXXXXXX -> +30XXXXXXXXX
     return `+30${digits}`;
   }
-  
+
   if (digits.length === 11 && digits.startsWith('30')) {
     // Greek with country code: 30XXXXXXXXX -> +30XXXXXXXXX
     return `+${digits}`;
   }
-  
+
   if (digits.length >= 10 && digits.startsWith('+')) {
     // Already has + prefix
     return phone;
   }
-  
+
   if (digits.length >= 10) {
     // Add + prefix
     return `+${digits}`;
   }
-  
+
   return null;
 }
 
@@ -49,13 +49,13 @@ export function normalizeEmail(email) {
   }
 
   const trimmed = email.trim().toLowerCase();
-  
+
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(trimmed)) {
     return null;
   }
-  
+
   return trimmed;
 }
 
@@ -68,7 +68,7 @@ export function isValidE164(phoneE164) {
   if (!phoneE164 || typeof phoneE164 !== 'string') {
     return false;
   }
-  
+
   // E.164 format: +[country code][number], 7-15 digits total
   const e164Regex = /^\+[1-9]\d{6,14}$/;
   return e164Regex.test(phoneE164);
@@ -83,7 +83,7 @@ export function isValidEmail(email) {
   if (!email || typeof email !== 'string') {
     return false;
   }
-  
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
 }

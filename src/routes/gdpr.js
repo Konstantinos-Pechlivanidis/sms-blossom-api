@@ -20,7 +20,7 @@ router.get('/status', async (req, res) => {
       encryption: true, // Assuming encryption is enabled
       audit_logging: true,
       data_retention: true,
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     };
 
     res.json(status);
@@ -39,9 +39,9 @@ router.post('/export', async (req, res) => {
     const { contactId, shopId } = req.body;
 
     if (!contactId || !shopId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'missing_parameters',
-        message: 'contactId and shopId are required'
+        message: 'contactId and shopId are required',
       });
     }
 
@@ -49,23 +49,23 @@ router.post('/export', async (req, res) => {
     const contact = await prisma.contact.findFirst({
       where: {
         id: contactId,
-        shopId: shopId
+        shopId: shopId,
       },
       include: {
         shop: {
           select: {
             id: true,
             domain: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     if (!contact) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'contact_not_found',
-        message: 'Contact not found'
+        message: 'Contact not found',
       });
     }
 
@@ -78,31 +78,31 @@ router.post('/export', async (req, res) => {
       shop: {
         id: contact.shop.id,
         domain: contact.shop.domain,
-        name: contact.shop.name
+        name: contact.shop.name,
       },
       personal_data: {
         phone: decryptedContact.phoneE164,
         email: decryptedContact.email,
         first_name: contact.firstName,
-        last_name: contact.lastName
+        last_name: contact.lastName,
       },
       consent_data: {
         sms_consent_state: contact.smsConsentState,
         sms_consent_source: contact.smsConsentSource,
         sms_consent_at: contact.smsConsentAt,
         unsubscribed_at: contact.unsubscribedAt,
-        opted_out: contact.optedOut
+        opted_out: contact.optedOut,
       },
       metadata: {
         created_at: contact.createdAt,
         updated_at: contact.updatedAt,
         tags: contact.tagsJson,
-        welcomed_at: contact.welcomedAt
+        welcomed_at: contact.welcomedAt,
       },
       export_metadata: {
         exported_at: new Date().toISOString(),
-        export_id: `export_${contact.id}_${Date.now()}`
-      }
+        export_id: `export_${contact.id}_${Date.now()}`,
+      },
     };
 
     // Log the export action
@@ -114,8 +114,8 @@ router.post('/export', async (req, res) => {
         entity: 'contact',
         entityId: contact.id,
         ip: req.ip,
-        ua: req.get('user-agent')
-      }
+        ua: req.get('user-agent'),
+      },
     });
 
     res.json(exportData);
@@ -135,9 +135,9 @@ router.delete('/delete/:contactId', async (req, res) => {
     const { shopId } = req.query;
 
     if (!shopId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'missing_shop_id',
-        message: 'shopId query parameter is required'
+        message: 'shopId query parameter is required',
       });
     }
 
@@ -145,14 +145,14 @@ router.delete('/delete/:contactId', async (req, res) => {
     const contact = await prisma.contact.findFirst({
       where: {
         id: contactId,
-        shopId: shopId
-      }
+        shopId: shopId,
+      },
     });
 
     if (!contact) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'contact_not_found',
-        message: 'Contact not found'
+        message: 'Contact not found',
       });
     }
 
@@ -173,8 +173,8 @@ router.delete('/delete/:contactId', async (req, res) => {
         smsConsentState: 'opted_out',
         smsConsentSource: 'gdpr',
         unsubscribedAt: new Date(),
-        optedOut: true
-      }
+        optedOut: true,
+      },
     });
 
     // Log the deletion action
@@ -189,15 +189,15 @@ router.delete('/delete/:contactId', async (req, res) => {
         ua: req.get('user-agent'),
         diffJson: {
           reason: 'gdpr_data_deletion',
-          deleted_at: new Date().toISOString()
-        }
-      }
+          deleted_at: new Date().toISOString(),
+        },
+      },
     });
 
-    res.json({ 
+    res.json({
       success: true,
       message: 'Contact data deleted successfully',
-      deleted_at: new Date().toISOString()
+      deleted_at: new Date().toISOString(),
     });
   } catch (error) {
     logger.error({ error, contactId: req.params.contactId }, 'Failed to delete contact data');

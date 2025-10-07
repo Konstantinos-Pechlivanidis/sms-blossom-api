@@ -13,24 +13,24 @@ app.use(express.urlencoded({ extended: true }));
 // Mock SMS sending
 app.post('/api/sendSms', (req, res) => {
   const { to, text, from } = req.body;
-  
+
   // Simulate successful send
   const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   res.json({
     success: true,
     messageId,
     status: 'queued',
     cost: 0.05,
     parts: 1,
-    encoding: 'GSM'
+    encoding: 'GSM',
   });
 });
 
 // Mock DLR (Delivery Receipt) webhook
 app.post('/webhooks/dlr', (req, res) => {
   const { messageId, status, timestamp } = req.body;
-  
+
   // Simulate DLR processing
   console.log(`DLR received: ${messageId} - ${status}`);
   res.json({ received: true });
@@ -39,7 +39,7 @@ app.post('/webhooks/dlr', (req, res) => {
 // Mock inbound SMS webhook
 app.post('/webhooks/inbound', (req, res) => {
   const { from, text, timestamp } = req.body;
-  
+
   // Simulate inbound message processing
   console.log(`Inbound SMS: ${from} - ${text}`);
   res.json({ received: true });

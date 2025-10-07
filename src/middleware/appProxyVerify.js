@@ -13,38 +13,43 @@ export function appProxyVerifyMiddleware(req, res, next) {
   try {
     // Verify the signature
     if (!verifyAppProxySignature(req.query)) {
-      logger.warn({ 
-        ip: req.ip, 
-        userAgent: req.get('user-agent'),
-        query: req.query 
-      }, 'App Proxy signature verification failed');
-      
-      return res.status(401).json({ 
+      logger.warn(
+        {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          query: req.query,
+        },
+        'App Proxy signature verification failed',
+      );
+
+      return res.status(401).json({
         error: 'invalid_signature',
-        message: 'Request signature verification failed'
+        message: 'Request signature verification failed',
       });
     }
 
     // Extract and normalize shop domain
-    const shopDomain = String(req.query.shop || '').toLowerCase().trim();
+    const shopDomain = String(req.query.shop || '')
+      .toLowerCase()
+      .trim();
     if (!shopDomain) {
       logger.warn({ query: req.query }, 'App Proxy request missing shop parameter');
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'missing_shop',
-        message: 'Shop parameter is required'
+        message: 'Shop parameter is required',
       });
     }
 
     // Attach normalized shop domain to request
     req.proxyShopDomain = shopDomain;
-    
+
     logger.debug({ shopDomain }, 'App Proxy signature verified successfully');
     next();
   } catch (error) {
     logger.error({ error, query: req.query }, 'App Proxy verification error');
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'verification_error',
-      message: 'Internal error during signature verification'
+      message: 'Internal error during signature verification',
     });
   }
 }

@@ -91,10 +91,34 @@ app.use('/auth', (req, res, next) => {
   if (req.method === 'GET' && req.path === '/callback') return oauthRouter.callback(req, res, next);
   return res.status(404).send('Not found');
 });
-app.use('/discounts', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, discountsRouter);
-app.use('/settings', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, settingsRouter);
-app.use('/reports', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, reportsRouter);
-app.use('/automations', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, automationsRouter);
+app.use(
+  '/discounts',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  discountsRouter,
+);
+app.use(
+  '/settings',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  settingsRouter,
+);
+app.use(
+  '/reports',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  reportsRouter,
+);
+app.use(
+  '/automations',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  automationsRouter,
+);
 app.use('/', docsRouter); // /docs and /openapi.json
 app.use('/templates', templatesRouter);
 app.use('/dev', devRouter);
@@ -110,15 +134,53 @@ app.use('/gdpr', gdprRestRouter);
 app.use('/webhooks/mitto/dlr', mittoDlrRouter);
 app.use('/webhooks/mitto/inbound', mittoInboundRouter);
 // App Proxy routes - require signed request verification + rate limiting
-app.use('/public/storefront/consent', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, storefrontConsentRouter);
-app.use('/public/unsubscribe', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, unsubscribeRouter);
-app.use('/public/unsubscribe', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, publicUnsubscribe);
-app.use('/public/back-in-stock', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, publicBackInStock);
+app.use(
+  '/public/storefront/consent',
+  rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }),
+  appProxyVerifyMiddleware,
+  storefrontConsentRouter,
+);
+app.use(
+  '/public/unsubscribe',
+  rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }),
+  appProxyVerifyMiddleware,
+  unsubscribeRouter,
+);
+app.use(
+  '/public/unsubscribe',
+  rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }),
+  appProxyVerifyMiddleware,
+  publicUnsubscribe,
+);
+app.use(
+  '/public/back-in-stock',
+  rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }),
+  appProxyVerifyMiddleware,
+  publicBackInStock,
+);
 
 // Admin API routes - require JWT + shop scoping + rate limiting
-app.use('/campaigns', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, campaignsRouter);
-app.use('/segments', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, segmentsRouter);
-app.use('/segments', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, segmentsPreviewRouter);
+app.use(
+  '/campaigns',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  campaignsRouter,
+);
+app.use(
+  '/segments',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  segmentsRouter,
+);
+app.use(
+  '/segments',
+  rateLimitMiddleware(),
+  jwtVerifyMiddleware,
+  shopScopingMiddleware,
+  segmentsPreviewRouter,
+);
 app.use('/s', rateLimitMiddleware(), shortlinksRouter);
 app.use('/queue', queueHealthRouter);
 app.use('/metrics', metricsRouter);

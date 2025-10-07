@@ -9,19 +9,17 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
 describe('Reports and Cache', () => {
   describe('Cache Headers', () => {
     it('should return cache headers on reports endpoints', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       expect([200, 401, 404]).toContain(response.status);
-      
+
       if (response.status === 200) {
         expect(response.headers).toHaveProperty('x-cache');
       }
     });
 
     it('should show cache miss on first request', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       if (response.status === 200) {
         expect(response.headers['x-cache']).toBe('miss');
@@ -30,12 +28,10 @@ describe('Reports and Cache', () => {
 
     it('should show cache hit on second request', async () => {
       // First request
-      await request(BASE_URL)
-        .get('/reports/overview');
+      await request(BASE_URL).get('/reports/overview');
 
       // Second request (should be cached)
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       if (response.status === 200) {
         expect(response.headers['x-cache']).toBe('hit');
@@ -45,29 +41,25 @@ describe('Reports and Cache', () => {
 
   describe('Reports Endpoints', () => {
     it('should handle overview reports', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       expect([200, 401, 404]).toContain(response.status);
     });
 
     it('should handle messaging timeseries', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/messaging/timeseries');
+      const response = await request(BASE_URL).get('/reports/messaging/timeseries');
 
       expect([200, 401, 404]).toContain(response.status);
     });
 
     it('should handle campaign attribution', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/campaigns/attribution');
+      const response = await request(BASE_URL).get('/reports/campaigns/attribution');
 
       expect([200, 401, 404]).toContain(response.status);
     });
 
     it('should handle automation attribution', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/automations/attribution');
+      const response = await request(BASE_URL).get('/reports/automations/attribution');
 
       expect([200, 401, 404]).toContain(response.status);
     });
@@ -75,8 +67,7 @@ describe('Reports and Cache', () => {
 
   describe('Cache TTL', () => {
     it('should have reasonable cache TTL', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       if (response.status === 200) {
         const cacheControl = response.headers['cache-control'];
@@ -93,8 +84,7 @@ describe('Reports and Cache', () => {
   describe('Performance', () => {
     it('should respond within latency budget', async () => {
       const start = Date.now();
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
       const duration = Date.now() - start;
 
       if (response.status === 200) {
@@ -106,14 +96,12 @@ describe('Reports and Cache', () => {
     it('should have faster response on cached requests', async () => {
       // First request (cache miss)
       const start1 = Date.now();
-      await request(BASE_URL)
-        .get('/reports/overview');
+      await request(BASE_URL).get('/reports/overview');
       const duration1 = Date.now() - start1;
 
       // Second request (cache hit)
       const start2 = Date.now();
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
       const duration2 = Date.now() - start2;
 
       if (response.status === 200 && response.headers['x-cache'] === 'hit') {

@@ -546,5 +546,3 @@ describe('Webhook Payload Contract Tests', () => {
     });
   });
 });
-
-

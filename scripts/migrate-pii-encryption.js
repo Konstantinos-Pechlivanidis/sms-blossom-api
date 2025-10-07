@@ -21,10 +21,7 @@ async function migrateContacts() {
       // Find contacts that need encryption (have plaintext but no ciphertext)
       const contacts = await prisma.contact.findMany({
         where: {
-          AND: [
-            { phoneE164: { not: null } },
-            { phone_ciphertext: null }
-          ]
+          AND: [{ phoneE164: { not: null } }, { phone_ciphertext: null }],
         },
         select: {
           id: true,
@@ -34,9 +31,9 @@ async function migrateContacts() {
           phone_hash: true,
           phone_ciphertext: true,
           email_hash: true,
-          email_ciphertext: true
+          email_ciphertext: true,
         },
-        take: BATCH_SIZE
+        take: BATCH_SIZE,
       });
 
       if (contacts.length === 0) {
@@ -75,44 +72,54 @@ async function migrateContacts() {
                 phone_ciphertext: encryptedData.phone_ciphertext,
                 phone_last4: encryptedData.phone_last4,
                 email_hash: encryptedData.email_hash,
-                email_ciphertext: encryptedData.email_ciphertext
-              }
+                email_ciphertext: encryptedData.email_ciphertext,
+              },
             });
           }
 
           encrypted++;
-          logger.debug({ 
-            contactId: contact.id, 
-            phoneLast4: encryptedData.phone_last4,
-            hasEmail: !!normalizedEmail 
-          }, 'Contact encrypted');
-
+          logger.debug(
+            {
+              contactId: contact.id,
+              phoneLast4: encryptedData.phone_last4,
+              hasEmail: !!normalizedEmail,
+            },
+            'Contact encrypted',
+          );
         } catch (error) {
           errors++;
-          logger.error({ 
-            error, 
-            contactId: contact.id,
-            phoneE164: contact.phoneE164 
-          }, 'Failed to encrypt contact');
+          logger.error(
+            {
+              error,
+              contactId: contact.id,
+              phoneE164: contact.phoneE164,
+            },
+            'Failed to encrypt contact',
+          );
         }
       }
 
       processed += contacts.length;
-      logger.info({ 
-        processed, 
-        encrypted, 
-        errors,
-        dryRun: DRY_RUN 
-      }, 'Migration progress');
+      logger.info(
+        {
+          processed,
+          encrypted,
+          errors,
+          dryRun: DRY_RUN,
+        },
+        'Migration progress',
+      );
     }
 
-    logger.info({ 
-      totalProcessed: processed,
-      totalEncrypted: encrypted,
-      totalErrors: errors,
-      dryRun: DRY_RUN 
-    }, 'PII encryption migration completed');
-
+    logger.info(
+      {
+        totalProcessed: processed,
+        totalEncrypted: encrypted,
+        totalErrors: errors,
+        dryRun: DRY_RUN,
+      },
+      'PII encryption migration completed',
+    );
   } catch (error) {
     logger.error({ error }, 'Migration failed');
     throw error;
@@ -126,16 +133,16 @@ async function verifyEncryption() {
     // Test decrypt a few records
     const testContacts = await prisma.contact.findMany({
       where: {
-        phone_ciphertext: { not: null }
+        phone_ciphertext: { not: null },
       },
       select: {
         id: true,
         phoneE164: true,
         phone_ciphertext: true,
         email: true,
-        email_ciphertext: true
+        email_ciphertext: true,
       },
-      take: 5
+      take: 5,
     });
 
     for (const contact of testContacts) {
@@ -143,11 +150,14 @@ async function verifyEncryption() {
         if (contact.phone_ciphertext) {
           const decrypted = decryptPII({ phone_ciphertext: contact.phone_ciphertext });
           if (decrypted.phoneE164 !== contact.phoneE164) {
-            logger.error({ 
-              contactId: contact.id,
-              original: contact.phoneE164,
-              decrypted: decrypted.phoneE164 
-            }, 'Phone decryption mismatch');
+            logger.error(
+              {
+                contactId: contact.id,
+                original: contact.phoneE164,
+                decrypted: decrypted.phoneE164,
+              },
+              'Phone decryption mismatch',
+            );
           } else {
             logger.debug({ contactId: contact.id }, 'Phone decryption verified');
           }
@@ -156,11 +166,14 @@ async function verifyEncryption() {
         if (contact.email_ciphertext) {
           const decrypted = decryptPII({ email_ciphertext: contact.email_ciphertext });
           if (decrypted.email !== contact.email) {
-            logger.error({ 
-              contactId: contact.id,
-              original: contact.email,
-              decrypted: decrypted.email 
-            }, 'Email decryption mismatch');
+            logger.error(
+              {
+                contactId: contact.id,
+                original: contact.email,
+                decrypted: decrypted.email,
+              },
+              'Email decryption mismatch',
+            );
           } else {
             logger.debug({ contactId: contact.id }, 'Email decryption verified');
           }
@@ -184,7 +197,7 @@ async function main() {
     }
 
     await migrateContacts();
-    
+
     if (!DRY_RUN) {
       await verifyEncryption();
     }

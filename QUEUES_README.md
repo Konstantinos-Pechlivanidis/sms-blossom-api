@@ -394,5 +394,3 @@ redis-cli monitor
 # Check queue metrics
 curl http://localhost:3000/queue/health
 ```
-
-

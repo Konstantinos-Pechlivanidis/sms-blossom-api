@@ -193,5 +193,3 @@ export function resetMetrics() {
 
   logger.info('Metrics reset');
 }
-
-

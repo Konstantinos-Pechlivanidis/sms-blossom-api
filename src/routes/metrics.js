@@ -2,41 +2,96 @@
 // Prometheus metrics endpoint
 
 import { Router } from 'express';
-import { getPrometheusMetrics, getAllMetrics } from '../lib/metrics.js';
+import { getMetrics, getMetricsAsJson } from '../metrics/index.js';
 import { logger } from '../lib/logger.js';
 
 const router = Router();
 
-/**
- * GET /metrics - Prometheus format
- */
-router.get('/', async (req, res) => {
+// Middleware to check metrics token if configured
+function checkMetricsAuth(req, res, next) {
+  const metricsToken = process.env.METRICS_TOKEN;
+
+  if (!metricsToken) {
+    // No token configured, allow access
+    return next();
+  }
+
+  const authHeader = req.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Missing or invalid Authorization header',
+      message: 'Use: Authorization: Bearer <METRICS_TOKEN>',
+    });
+  }
+
+  const token = authHeader.substring(7);
+  if (token !== metricsToken) {
+    return res.status(401).json({
+      error: 'Invalid metrics token',
+    });
+  }
+
+  next();
+}
+
+// Prometheus metrics endpoint
+router.get('/', checkMetricsAuth, async (req, res) => {
+  const requestId = req.get('x-request-id') || 'unknown';
+
   try {
-    const metrics = getPrometheusMetrics();
+    const metrics = await getMetrics();
 
-    res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    res.set({
+      'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    });
+
     res.send(metrics);
-  } catch (error) {
-    logger.error({ error: error.message }, 'Failed to get Prometheus metrics');
 
-    res.status(500).json({ error: 'internal_error' });
+    logger.debug({ request_id: requestId }, 'Metrics endpoint accessed');
+  } catch (error) {
+    logger.error({ error: error.message, request_id: requestId }, 'Metrics collection failed');
+    res.status(500).json({
+      error: 'Metrics collection failed',
+      request_id: requestId,
+    });
   }
 });
 
-/**
- * GET /metrics/json - JSON format
- */
-router.get('/json', async (req, res) => {
-  try {
-    const metrics = getAllMetrics();
-    res.json(metrics);
-  } catch (error) {
-    logger.error({ error: error.message }, 'Failed to get JSON metrics');
+// JSON metrics endpoint (for debugging)
+router.get('/json', checkMetricsAuth, async (req, res) => {
+  const requestId = req.get('x-request-id') || 'unknown';
 
-    res.status(500).json({ error: 'internal_error' });
+  try {
+    const metrics = await getMetricsAsJson();
+
+    res.json({
+      metrics,
+      timestamp: new Date().toISOString(),
+      request_id: requestId,
+    });
+
+    logger.debug({ request_id: requestId }, 'JSON metrics endpoint accessed');
+  } catch (error) {
+    logger.error({ error: error.message, request_id: requestId }, 'JSON metrics collection failed');
+    res.status(500).json({
+      error: 'JSON metrics collection failed',
+      request_id: requestId,
+    });
   }
+});
+
+// Health check for metrics endpoint
+router.get('/health', (req, res) => {
+  const requestId = req.get('x-request-id') || 'unknown';
+
+  res.json({
+    status: 'ok',
+    endpoint: '/metrics',
+    auth_required: !!process.env.METRICS_TOKEN,
+    timestamp: new Date().toISOString(),
+    request_id: requestId,
+  });
 });
 
 export default router;
-
-

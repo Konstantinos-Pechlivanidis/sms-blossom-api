@@ -13,10 +13,10 @@ app.use(express.json());
 // Mock discount creation
 app.post('/admin/api/2024-01/graphql.json', (req, res) => {
   const { query, variables } = req.body;
-  
+
   if (query.includes('codeDiscountNodeCreate')) {
     const discountId = `gid://shopify/DiscountCodeNode/${Date.now()}`;
-    
+
     res.json({
       data: {
         codeDiscountNodeCreate: {
@@ -26,16 +26,18 @@ app.post('/admin/api/2024-01/graphql.json', (req, res) => {
               id: discountId,
               title: variables.input.title || 'Test Discount',
               codes: {
-                nodes: [{
-                  id: `gid://shopify/DiscountCode/${Date.now()}`,
-                  code: variables.input.codes[0] || 'TEST10'
-                }]
-              }
-            }
+                nodes: [
+                  {
+                    id: `gid://shopify/DiscountCode/${Date.now()}`,
+                    code: variables.input.codes[0] || 'TEST10',
+                  },
+                ],
+              },
+            },
           },
-          userErrors: []
-        }
-      }
+          userErrors: [],
+        },
+      },
     });
   } else if (query.includes('customerSmsMarketingConsentUpdate')) {
     res.json({
@@ -46,12 +48,12 @@ app.post('/admin/api/2024-01/graphql.json', (req, res) => {
             smsMarketingConsent: {
               marketingState: variables.input.consent.marketingState,
               marketingOptInLevel: variables.input.consent.marketingOptInLevel,
-              consentUpdatedAt: new Date().toISOString()
-            }
+              consentUpdatedAt: new Date().toISOString(),
+            },
           },
-          userErrors: []
-        }
-      }
+          userErrors: [],
+        },
+      },
     });
   } else {
     res.json({ data: {}, userErrors: [] });
@@ -61,16 +63,18 @@ app.post('/admin/api/2024-01/graphql.json', (req, res) => {
 // Mock customer search
 app.post('/admin/api/2024-01/customers/search.json', (req, res) => {
   const { query } = req.body;
-  
+
   if (query.includes('phone')) {
     res.json({
-      customers: [{
-        id: 123456789,
-        email: 'test@example.com',
-        phone: '+306912345678',
-        first_name: 'Test',
-        last_name: 'User'
-      }]
+      customers: [
+        {
+          id: 123456789,
+          email: 'test@example.com',
+          phone: '+306912345678',
+          first_name: 'Test',
+          last_name: 'User',
+        },
+      ],
     });
   } else {
     res.json({ customers: [] });

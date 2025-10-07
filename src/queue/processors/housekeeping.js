@@ -204,5 +204,3 @@ async function cleanupEvents(shopId) {
     logger.error({ error: error.message, shopId }, 'Failed to cleanup old events');
   }
 }
-
-

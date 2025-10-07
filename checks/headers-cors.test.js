@@ -17,7 +17,7 @@ describe('HTTP Headers and CORS', () => {
         .set('Access-Control-Request-Headers', 'Content-Type');
 
       expect([200, 204]).toContain(response.status);
-      
+
       if (response.status === 200 || response.status === 204) {
         expect(response.headers).toHaveProperty('access-control-allow-origin');
         expect(response.headers['access-control-allow-origin']).toBe(FRONTEND_URL);
@@ -55,19 +55,16 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Request ID Headers', () => {
     it('should include x-request-id on all responses', async () => {
-      const response = await request(BASE_URL)
-        .get('/health');
+      const response = await request(BASE_URL).get('/health');
 
       expect(response.headers).toHaveProperty('x-request-id');
       expect(response.headers['x-request-id']).toBeTruthy();
     });
 
     it('should have unique x-request-id for each request', async () => {
-      const response1 = await request(BASE_URL)
-        .get('/health');
-      
-      const response2 = await request(BASE_URL)
-        .get('/health');
+      const response1 = await request(BASE_URL).get('/health');
+
+      const response2 = await request(BASE_URL).get('/health');
 
       expect(response1.headers['x-request-id']).not.toBe(response2.headers['x-request-id']);
     });
@@ -75,17 +72,12 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Security Headers', () => {
     it('should include security headers', async () => {
-      const response = await request(BASE_URL)
-        .get('/health');
+      const response = await request(BASE_URL).get('/health');
 
       // Check for common security headers
-      const securityHeaders = [
-        'x-content-type-options',
-        'x-frame-options',
-        'x-xss-protection'
-      ];
+      const securityHeaders = ['x-content-type-options', 'x-frame-options', 'x-xss-protection'];
 
-      securityHeaders.forEach(header => {
+      securityHeaders.forEach((header) => {
         if (response.headers[header]) {
           expect(response.headers[header]).toBeTruthy();
         }
@@ -93,8 +85,7 @@ describe('HTTP Headers and CORS', () => {
     });
 
     it('should not expose server information', async () => {
-      const response = await request(BASE_URL)
-        .get('/health');
+      const response = await request(BASE_URL).get('/health');
 
       expect(response.headers).not.toHaveProperty('server');
       expect(response.headers).not.toHaveProperty('x-powered-by');
@@ -109,7 +100,7 @@ describe('HTTP Headers and CORS', () => {
           shop: 'test-shop.myshopify.com',
           phone: '+306912345678',
           timestamp: Math.floor(Date.now() / 1000).toString(),
-          signature: 'valid-signature'
+          signature: 'valid-signature',
         });
 
       expect(response.headers).toHaveProperty('x-ratelimit-limit');
@@ -119,20 +110,22 @@ describe('HTTP Headers and CORS', () => {
 
     it('should include retry-after header on rate limit', async () => {
       // Make multiple requests to trigger rate limiting
-      const requests = Array(150).fill().map(() => 
-        request(BASE_URL)
-          .get('/public/unsubscribe')
-          .query({
-            shop: 'test-shop.myshopify.com',
-            phone: '+306912345678',
-            timestamp: Math.floor(Date.now() / 1000).toString(),
-            signature: 'valid-signature'
-          })
-      );
+      const requests = Array(150)
+        .fill()
+        .map(() =>
+          request(BASE_URL)
+            .get('/public/unsubscribe')
+            .query({
+              shop: 'test-shop.myshopify.com',
+              phone: '+306912345678',
+              timestamp: Math.floor(Date.now() / 1000).toString(),
+              signature: 'valid-signature',
+            }),
+        );
 
       const responses = await Promise.all(requests);
-      const rateLimited = responses.find(r => r.status === 429);
-      
+      const rateLimited = responses.find((r) => r.status === 429);
+
       if (rateLimited) {
         expect(rateLimited.headers).toHaveProperty('retry-after');
         expect(parseInt(rateLimited.headers['retry-after'])).toBeGreaterThan(0);
@@ -142,8 +135,7 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Cache Headers', () => {
     it('should include cache headers on reports', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       if (response.status === 200) {
         expect(response.headers).toHaveProperty('x-cache');
@@ -152,8 +144,7 @@ describe('HTTP Headers and CORS', () => {
     });
 
     it('should include cache-control headers', async () => {
-      const response = await request(BASE_URL)
-        .get('/reports/overview');
+      const response = await request(BASE_URL).get('/reports/overview');
 
       if (response.status === 200 && response.headers['cache-control']) {
         expect(response.headers['cache-control']).toContain('max-age');
@@ -163,8 +154,7 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Error Response Headers', () => {
     it('should include proper headers on 401 errors', async () => {
-      const response = await request(BASE_URL)
-        .get('/discounts');
+      const response = await request(BASE_URL).get('/discounts');
 
       expect(response.status).toBe(401);
       expect(response.headers).toHaveProperty('x-request-id');
@@ -172,8 +162,7 @@ describe('HTTP Headers and CORS', () => {
     });
 
     it('should include proper headers on 404 errors', async () => {
-      const response = await request(BASE_URL)
-        .get('/nonexistent-route');
+      const response = await request(BASE_URL).get('/nonexistent-route');
 
       expect(response.status).toBe(404);
       expect(response.headers).toHaveProperty('x-request-id');
@@ -181,20 +170,22 @@ describe('HTTP Headers and CORS', () => {
 
     it('should include proper headers on 429 errors', async () => {
       // Trigger rate limiting
-      const requests = Array(150).fill().map(() => 
-        request(BASE_URL)
-          .get('/public/unsubscribe')
-          .query({
-            shop: 'test-shop.myshopify.com',
-            phone: '+306912345678',
-            timestamp: Math.floor(Date.now() / 1000).toString(),
-            signature: 'valid-signature'
-          })
-      );
+      const requests = Array(150)
+        .fill()
+        .map(() =>
+          request(BASE_URL)
+            .get('/public/unsubscribe')
+            .query({
+              shop: 'test-shop.myshopify.com',
+              phone: '+306912345678',
+              timestamp: Math.floor(Date.now() / 1000).toString(),
+              signature: 'valid-signature',
+            }),
+        );
 
       const responses = await Promise.all(requests);
-      const rateLimited = responses.find(r => r.status === 429);
-      
+      const rateLimited = responses.find((r) => r.status === 429);
+
       if (rateLimited) {
         expect(rateLimited.headers).toHaveProperty('x-request-id');
         expect(rateLimited.headers).toHaveProperty('retry-after');
@@ -204,8 +195,7 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Content-Type Headers', () => {
     it('should return JSON for API endpoints', async () => {
-      const response = await request(BASE_URL)
-        .get('/health');
+      const response = await request(BASE_URL).get('/health');
 
       expect(response.headers['content-type']).toContain('application/json');
     });
@@ -217,7 +207,7 @@ describe('HTTP Headers and CORS', () => {
           shop: 'test-shop.myshopify.com',
           phone: '+306912345678',
           timestamp: Math.floor(Date.now() / 1000).toString(),
-          signature: 'valid-signature'
+          signature: 'valid-signature',
         })
         .set('Accept', 'text/html');
 
@@ -227,8 +217,7 @@ describe('HTTP Headers and CORS', () => {
     });
 
     it('should return plain text for metrics', async () => {
-      const response = await request(BASE_URL)
-        .get('/metrics');
+      const response = await request(BASE_URL).get('/metrics');
 
       if (response.status === 200) {
         expect(response.headers['content-type']).toContain('text/plain');
@@ -238,8 +227,7 @@ describe('HTTP Headers and CORS', () => {
 
   describe('Error Taxonomy', () => {
     it('should return 401 for missing authentication', async () => {
-      const response = await request(BASE_URL)
-        .get('/discounts');
+      const response = await request(BASE_URL).get('/discounts');
 
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error');
@@ -255,8 +243,7 @@ describe('HTTP Headers and CORS', () => {
     });
 
     it('should return 404 for not found', async () => {
-      const response = await request(BASE_URL)
-        .get('/nonexistent-route');
+      const response = await request(BASE_URL).get('/nonexistent-route');
 
       expect(response.status).toBe(404);
     });
@@ -267,7 +254,7 @@ describe('HTTP Headers and CORS', () => {
         .query({
           shop: 'test-shop.myshopify.com',
           timestamp: Math.floor(Date.now() / 1000).toString(),
-          signature: 'valid-signature'
+          signature: 'valid-signature',
         })
         .send({ phone: 'invalid-phone' });
 
@@ -276,20 +263,22 @@ describe('HTTP Headers and CORS', () => {
 
     it('should return 429 for rate limiting', async () => {
       // Make multiple requests to trigger rate limiting
-      const requests = Array(150).fill().map(() => 
-        request(BASE_URL)
-          .get('/public/unsubscribe')
-          .query({
-            shop: 'test-shop.myshopify.com',
-            phone: '+306912345678',
-            timestamp: Math.floor(Date.now() / 1000).toString(),
-            signature: 'valid-signature'
-          })
-      );
+      const requests = Array(150)
+        .fill()
+        .map(() =>
+          request(BASE_URL)
+            .get('/public/unsubscribe')
+            .query({
+              shop: 'test-shop.myshopify.com',
+              phone: '+306912345678',
+              timestamp: Math.floor(Date.now() / 1000).toString(),
+              signature: 'valid-signature',
+            }),
+        );
 
       const responses = await Promise.all(requests);
-      const rateLimited = responses.find(r => r.status === 429);
-      
+      const rateLimited = responses.find((r) => r.status === 429);
+
       if (rateLimited) {
         expect(rateLimited.status).toBe(429);
         expect(rateLimited.body).toHaveProperty('error', 'rate_limit_exceeded');

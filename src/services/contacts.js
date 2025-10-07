@@ -20,11 +20,11 @@ export async function upsertContactByPhone({
   email = null,
 }) {
   const prisma = getPrismaClient();
-  
+
   // Normalize and encrypt PII data
   const normalizedPhone = normalizePhone(phoneE164);
   const normalizedEmail = email ? normalizeEmail(email) : null;
-  
+
   if (!normalizedPhone) {
     throw new Error('Invalid phone number format');
   }
@@ -63,19 +63,19 @@ export async function findShopByDomain(shopDomain) {
 export async function findContactByPhoneHash(shopId, phoneE164) {
   const prisma = getPrismaClient();
   const normalizedPhone = normalizePhone(phoneE164);
-  
+
   if (!normalizedPhone) {
     return null;
   }
 
   // Generate hash for lookup
   const phoneHash = require('../lib/encryption.js').hashDeterministic(normalizedPhone);
-  
+
   return prisma.contact.findFirst({
     where: {
       shopId,
-      phone_hash: phoneHash
-    }
+      phone_hash: phoneHash,
+    },
   });
 }
 
@@ -88,7 +88,7 @@ export function decryptContactPII(contact) {
   if (!contact) return contact;
 
   const decrypted = {
-    ...contact
+    ...contact,
   };
 
   try {

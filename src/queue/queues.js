@@ -211,5 +211,3 @@ export async function enqueueJob(queueName, jobName, data, options = {}) {
 
   return await queue.add(jobName, jobData, options);
 }
-
-

@@ -12,11 +12,11 @@ import crypto from 'crypto';
 export function signAppProxy(query, secret = process.env.SHOPIFY_API_SECRET) {
   const q = { ...query };
   delete q.signature;
-  
+
   const parts = Object.entries(q)
     .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : (v ?? '')}`)
     .sort();
-  
+
   const sorted = parts.join('');
   return crypto.createHmac('sha256', secret).update(sorted).digest('hex');
 }
@@ -51,14 +51,14 @@ export function createSignedAppProxyQuery(params, secret = process.env.SHOPIFY_A
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const query = {
     ...params,
-    timestamp
+    timestamp,
   };
-  
+
   const signature = signAppProxy(query, secret);
-  
+
   return {
     ...query,
-    signature
+    signature,
   };
 }
 
@@ -71,15 +71,15 @@ export function createSignedAppProxyQuery(params, secret = process.env.SHOPIFY_A
 export function createSignedWebhook(payload, secret = process.env.WEBHOOK_HMAC_SECRET) {
   const body = JSON.stringify(payload);
   const signature = signWebhook(body, secret);
-  
+
   return {
     headers: {
       'Content-Type': 'application/json',
       'X-Shopify-Hmac-Sha256': signature,
       'X-Shopify-Shop-Domain': payload.shop_domain || 'test-shop.myshopify.com',
-      'X-Shopify-Topic': payload.topic || 'orders/paid'
+      'X-Shopify-Topic': payload.topic || 'orders/paid',
     },
-    body
+    body,
   };
 }
 
@@ -92,12 +92,12 @@ export function createSignedWebhook(payload, secret = process.env.WEBHOOK_HMAC_S
 export function createSignedMittoWebhook(payload, secret = process.env.MITTO_HMAC_SECRET) {
   const body = JSON.stringify(payload);
   const signature = signMittoWebhook(body, secret);
-  
+
   return {
     headers: {
       'Content-Type': 'application/json',
-      'X-Mitto-Hmac-Sha256': signature
+      'X-Mitto-Hmac-Sha256': signature,
     },
-    body
+    body,
   };
 }

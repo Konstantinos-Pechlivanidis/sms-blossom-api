@@ -424,5 +424,3 @@ describe('GDPR Webhook Tests', () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true, eventId: 'event_123' });
   });
 });
-
-

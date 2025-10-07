@@ -7,7 +7,7 @@ import { logger } from '../lib/logger.js';
 const DEFAULT_LIMITS = {
   admin: { requests: 600, window: 60, burst: 60 }, // 600 rpm, 60 rps burst
   public: { requests: 120, window: 60, burst: 10 }, // 120 rpm, 10 rps burst
-  webhook: { requests: 1000, window: 60, burst: 100 } // 1000 rpm, 100 rps burst
+  webhook: { requests: 1000, window: 60, burst: 100 }, // 1000 rpm, 100 rps burst
 };
 
 /**
@@ -17,7 +17,7 @@ const DEFAULT_LIMITS = {
  */
 export function rateLimitMiddleware(options = {}) {
   const limits = { ...DEFAULT_LIMITS.admin, ...options };
-  
+
   return async (req, res, next) => {
     try {
       const redis = getRedisConnection();
@@ -43,7 +43,7 @@ export function rateLimitMiddleware(options = {}) {
       const windowKey = `${key}:${windowStart}`;
 
       // Get current count
-      const currentCount = await redis.get(windowKey) || 0;
+      const currentCount = (await redis.get(windowKey)) || 0;
       const count = parseInt(currentCount, 10);
 
       // Check if limit exceeded
@@ -51,25 +51,28 @@ export function rateLimitMiddleware(options = {}) {
         const resetTime = (windowStart + limits.window) * 1000;
         const retryAfter = Math.ceil((resetTime - now) / 1000);
 
-        logger.warn({ 
-          key, 
-          count, 
-          limit: limits.requests,
-          ip: req.ip,
-          userAgent: req.get('user-agent')
-        }, 'Rate limit exceeded');
+        logger.warn(
+          {
+            key,
+            count,
+            limit: limits.requests,
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+          },
+          'Rate limit exceeded',
+        );
 
         res.set({
           'Retry-After': retryAfter.toString(),
           'X-RateLimit-Limit': limits.requests.toString(),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': resetTime.toString()
+          'X-RateLimit-Reset': resetTime.toString(),
         });
 
-        return res.status(429).json({ 
+        return res.status(429).json({
           error: 'rate_limit_exceeded',
           message: 'Too many requests',
-          retry_after: retryAfter
+          retry_after: retryAfter,
         });
       }
 
@@ -86,7 +89,7 @@ export function rateLimitMiddleware(options = {}) {
       res.set({
         'X-RateLimit-Limit': limits.requests.toString(),
         'X-RateLimit-Remaining': remaining.toString(),
-        'X-RateLimit-Reset': resetTime.toString()
+        'X-RateLimit-Reset': resetTime.toString(),
       });
 
       next();
@@ -115,14 +118,14 @@ export async function checkRateLimit(key, limits = DEFAULT_LIMITS.admin) {
     const windowStart = Math.floor(now / 1000 / limits.window) * limits.window;
     const windowKey = `${key}:${windowStart}`;
 
-    const currentCount = await redis.get(windowKey) || 0;
+    const currentCount = (await redis.get(windowKey)) || 0;
     const count = parseInt(currentCount, 10);
     const remaining = Math.max(0, limits.requests - count);
 
     return {
       allowed: count < limits.requests,
       remaining,
-      resetTime: (windowStart + limits.window) * 1000
+      resetTime: (windowStart + limits.window) * 1000,
     };
   } catch (error) {
     logger.error({ error }, 'Rate limit check failed');

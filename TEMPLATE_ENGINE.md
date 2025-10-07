@@ -381,5 +381,3 @@ Great news! {{ product_name }} is back in stock.
 
 Shop now: {{ product_url | shortlink }}
 ```
-
-

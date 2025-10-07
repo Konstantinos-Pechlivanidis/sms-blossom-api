@@ -33,16 +33,16 @@ export function encrypt(text) {
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipher(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'base64'));
     cipher.setAAD(Buffer.from('sms-blossom-pii', 'utf8')); // Additional authenticated data
-    
+
     let ciphertext = cipher.update(text, 'utf8', 'base64');
     ciphertext += cipher.final('base64');
-    
+
     const tag = cipher.getAuthTag();
-    
+
     return {
       ciphertext,
       iv: iv.toString('base64'),
-      tag: tag.toString('base64')
+      tag: tag.toString('base64'),
     };
   } catch (error) {
     logger.error({ error }, 'Encryption failed');
@@ -64,10 +64,10 @@ export function decrypt(encrypted) {
     const decipher = crypto.createDecipher(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'base64'));
     decipher.setAAD(Buffer.from('sms-blossom-pii', 'utf8'));
     decipher.setAuthTag(Buffer.from(encrypted.tag, 'base64'));
-    
+
     let decrypted = decipher.update(encrypted.ciphertext, 'base64', 'utf8');
     decrypted += decipher.final('utf8');
-    
+
     return decrypted;
   } catch (error) {
     logger.error({ error }, 'Decryption failed');
@@ -100,7 +100,7 @@ export function extractLast4(phoneE164) {
   if (!phoneE164 || typeof phoneE164 !== 'string') {
     return '';
   }
-  
+
   const digits = phoneE164.replace(/\D/g, '');
   return digits.slice(-4);
 }
@@ -115,7 +115,7 @@ export function encryptPII(phoneE164, email = null) {
   const result = {
     phone_hash: hashDeterministic(phoneE164),
     phone_ciphertext: encrypt(phoneE164),
-    phone_last4: extractLast4(phoneE164)
+    phone_last4: extractLast4(phoneE164),
   };
 
   if (email) {

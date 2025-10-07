@@ -11,25 +11,25 @@ import publicUnsubscribe from '../src/routes/public-unsubscribe.js';
 vi.mock('../src/db/prismaClient.js', () => ({
   getPrismaClient: vi.fn(() => ({
     shop: {
-      findUnique: vi.fn()
+      findUnique: vi.fn(),
     },
     contact: {
       findUnique: vi.fn(),
-      upsert: vi.fn()
-    }
-  }))
+      upsert: vi.fn(),
+    },
+  })),
 }));
 
 vi.mock('../src/lib/phone.js', () => ({
-  toE164Loose: vi.fn((phone) => phone)
+  toE164Loose: vi.fn((phone) => phone),
 }));
 
 vi.mock('../src/services/consent.js', () => ({
-  updateSmsConsent: vi.fn()
+  updateSmsConsent: vi.fn(),
 }));
 
 vi.mock('../src/services/consent-unified.js', () => ({
-  updateLocalAndRemoteConsent: vi.fn()
+  updateLocalAndRemoteConsent: vi.fn(),
 }));
 
 describe('Public Unsubscribe HTML Confirmation', () => {
@@ -50,7 +50,7 @@ describe('Public Unsubscribe HTML Confirmation', () => {
           shop: 'test-shop.myshopify.com',
           phone: '+306912345678',
           timestamp: '1234567890',
-          signature: 'valid-signature'
+          signature: 'valid-signature',
         })
         .set('Accept', 'text/html')
         .expect(200);
@@ -68,7 +68,7 @@ describe('Public Unsubscribe HTML Confirmation', () => {
           shop: 'test-shop.myshopify.com',
           phone: '+306912345678',
           timestamp: '1234567890',
-          signature: 'valid-signature'
+          signature: 'valid-signature',
         })
         .set('Accept', 'application/json')
         .expect(200);
@@ -84,7 +84,7 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .set('Accept', 'text/html')
         .expect(200);
@@ -100,7 +100,7 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .set('Accept', 'application/json')
         .expect(200);
@@ -116,7 +116,7 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .expect(200);
 
@@ -131,13 +131,13 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .set('Accept', 'text/html')
         .expect(200);
 
       const html = response.text;
-      
+
       // Check for proper HTML structure
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('<html lang="en">');
@@ -155,13 +155,13 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .set('Accept', 'text/html')
         .expect(200);
 
       const html = response.text;
-      
+
       // Check for CSS styles
       expect(html).toContain('<style>');
       expect(html).toContain('font-family: -apple-system');
@@ -175,13 +175,13 @@ describe('Public Unsubscribe HTML Confirmation', () => {
         .get('/public/unsubscribe')
         .query({
           shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         })
         .set('Accept', 'text/html')
         .expect(200);
 
       const html = response.text;
-      
+
       // Check for accessibility features
       expect(html).toContain('lang="en"');
       expect(html).toContain('✓ Successfully Unsubscribed');

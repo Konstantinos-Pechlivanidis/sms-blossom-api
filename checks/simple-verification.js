@@ -47,7 +47,7 @@ function makeRequest(url, options = {}) {
     const urlObj = new URL(url);
     const isHttps = urlObj.protocol === 'https:';
     const client = isHttps ? https : http;
-    
+
     const requestOptions = {
       hostname: urlObj.hostname,
       port: urlObj.port || (isHttps ? 443 : 80),
@@ -59,13 +59,13 @@ function makeRequest(url, options = {}) {
         ...options.headers,
       },
     };
-    
+
     const req = client.request(requestOptions, (res) => {
       let data = '';
       res.on('data', (chunk) => {
         data += chunk;
       });
-      
+
       res.on('end', () => {
         let jsonData;
         try {
@@ -73,7 +73,7 @@ function makeRequest(url, options = {}) {
         } catch {
           jsonData = data;
         }
-        
+
         resolve({
           status: res.statusCode,
           headers: res.headers,
@@ -82,13 +82,13 @@ function makeRequest(url, options = {}) {
         });
       });
     });
-    
+
     req.on('error', reject);
-    
+
     if (options.body) {
       req.write(options.body);
     }
-    
+
     req.end();
   });
 }
@@ -97,7 +97,7 @@ function makeRequest(url, options = {}) {
 function checkEnvironment() {
   const required = [
     'BASE_URL',
-    'FRONTEND_URL', 
+    'FRONTEND_URL',
     'DEV_SHOP_DOMAIN',
     'DATABASE_URL',
     'WEBHOOK_HMAC_SECRET',
@@ -105,20 +105,24 @@ function checkEnvironment() {
     'ENCRYPTION_KEY',
     'HASH_PEPPER',
   ];
-  
-  const missing = required.filter(key => !process.env[key]);
-  
+
+  const missing = required.filter((key) => !process.env[key]);
+
   if (missing.length > 0) {
     testResults.environment.status = 'FAIL';
-    testResults.environment.details.push(`Missing required environment variables: ${missing.join(', ')}`);
+    testResults.environment.details.push(
+      `Missing required environment variables: ${missing.join(', ')}`,
+    );
   } else {
     testResults.environment.status = 'PASS';
     testResults.environment.details.push('All required environment variables present');
   }
-  
+
   // Check for webhook secret alias
   if (process.env.WEBHOOK_SECRET && !process.env.WEBHOOK_HMAC_SECRET) {
-    testResults.environment.details.push('Using legacy WEBHOOK_SECRET (will be aliased to WEBHOOK_HMAC_SECRET)');
+    testResults.environment.details.push(
+      'Using legacy WEBHOOK_SECRET (will be aliased to WEBHOOK_HMAC_SECRET)',
+    );
   }
 }
 
@@ -127,7 +131,7 @@ async function checkDatabase() {
   try {
     // Check health endpoint
     const healthResponse = await makeRequest(`${config.baseUrl}/health`);
-    
+
     if (healthResponse.status === 200 && healthResponse.data.database === true) {
       testResults.database.status = 'PASS';
       testResults.database.details.push('Database connection healthy');
@@ -135,10 +139,9 @@ async function checkDatabase() {
       testResults.database.status = 'FAIL';
       testResults.database.details.push('Database connection unhealthy');
     }
-    
+
     // Check for required columns (via a test query)
     testResults.database.details.push('Database schema validation pending');
-    
   } catch (error) {
     testResults.database.status = 'FAIL';
     testResults.database.details.push(`Database check failed: ${error.message}`);
@@ -150,22 +153,23 @@ async function checkPiiCoverage() {
   try {
     // This would need to be implemented based on your specific PII coverage endpoint
     const healthResponse = await makeRequest(`${config.baseUrl}/health`);
-    
+
     if (healthResponse.data.piiCoverage) {
       const { phone, email } = healthResponse.data.piiCoverage;
-      
+
       if (phone >= 95 && email >= 95) {
         testResults.piiCoverage.status = 'PASS';
         testResults.piiCoverage.details.push(`PII coverage: phone ${phone}%, email ${email}%`);
       } else {
         testResults.piiCoverage.status = 'WARN';
-        testResults.piiCoverage.details.push(`PII coverage below 95%: phone ${phone}%, email ${email}%`);
+        testResults.piiCoverage.details.push(
+          `PII coverage below 95%: phone ${phone}%, email ${email}%`,
+        );
       }
     } else {
       testResults.piiCoverage.status = 'PENDING';
       testResults.piiCoverage.details.push('PII coverage check not implemented in health endpoint');
     }
-    
   } catch (error) {
     testResults.piiCoverage.status = 'FAIL';
     testResults.piiCoverage.details.push(`PII coverage check failed: ${error.message}`);
@@ -176,16 +180,17 @@ async function checkPiiCoverage() {
 async function checkQueues() {
   try {
     const queueHealthResponse = await makeRequest(`${config.baseUrl}/queue/health`);
-    
+
     if (queueHealthResponse.status === 200 && queueHealthResponse.data.redis === true) {
       testResults.queues.status = 'PASS';
       testResults.queues.details.push('Redis connection healthy');
       testResults.queues.details.push(`Queue status: ${JSON.stringify(queueHealthResponse.data)}`);
     } else {
       testResults.queues.status = 'FAIL';
-      testResults.queues.details.push('Redis connection unhealthy or queue health endpoint not available');
+      testResults.queues.details.push(
+        'Redis connection unhealthy or queue health endpoint not available',
+      );
     }
-    
   } catch (error) {
     testResults.queues.status = 'FAIL';
     testResults.queues.details.push(`Queue health check failed: ${error.message}`);
@@ -195,16 +200,20 @@ async function checkQueues() {
 // Helper function to check security surface
 async function checkSecurity() {
   const securityChecks = [];
-  
+
   try {
     // Test App Proxy HMAC
-    const unsignedResponse = await makeRequest(`${config.baseUrl}${config.appProxySubpath}/unsubscribe`);
+    const unsignedResponse = await makeRequest(
+      `${config.baseUrl}${config.appProxySubpath}/unsubscribe`,
+    );
     if (unsignedResponse.status === 401) {
       securityChecks.push('App Proxy unsigned request correctly returns 401');
     } else {
-      securityChecks.push(`App Proxy unsigned request returned ${unsignedResponse.status} (expected 401)`);
+      securityChecks.push(
+        `App Proxy unsigned request returned ${unsignedResponse.status} (expected 401)`,
+      );
     }
-    
+
     // Test Admin JWT protection
     const protectedResponse = await makeRequest(`${config.baseUrl}/admin/campaigns`);
     if (protectedResponse.status === 401) {
@@ -212,25 +221,24 @@ async function checkSecurity() {
     } else {
       securityChecks.push(`Admin route returned ${protectedResponse.status} (expected 401)`);
     }
-    
+
     // Test rate limiting
     const rateLimitPromises = [];
     for (let i = 0; i < 10; i++) {
       rateLimitPromises.push(makeRequest(`${config.baseUrl}/public/health`));
     }
-    
+
     const rateLimitResponses = await Promise.all(rateLimitPromises);
-    const rateLimited = rateLimitResponses.some(r => r.status === 429);
-    
+    const rateLimited = rateLimitResponses.some((r) => r.status === 429);
+
     if (rateLimited) {
       securityChecks.push('Rate limiting is working (received 429)');
     } else {
       securityChecks.push('Rate limiting may not be configured or thresholds too high');
     }
-    
+
     testResults.security.status = 'PASS';
     testResults.security.details = securityChecks;
-    
   } catch (error) {
     testResults.security.status = 'FAIL';
     testResults.security.details.push(`Security check failed: ${error.message}`);
@@ -243,7 +251,7 @@ async function checkWebhooks() {
     // Test webhook endpoints exist
     const webhookTopics = ['orders/paid', 'checkouts/update', 'inventory_levels/update'];
     const webhookResults = [];
-    
+
     for (const topic of webhookTopics) {
       const response = await makeRequest(`${config.baseUrl}/webhooks/shopify/${topic}`, {
         method: 'POST',
@@ -253,17 +261,16 @@ async function checkWebhooks() {
           'X-Shopify-Hmac-Sha256': 'test-hmac',
         },
       });
-      
+
       if (response.status === 401) {
         webhookResults.push(`${topic}: HMAC validation working (401)`);
       } else {
         webhookResults.push(`${topic}: ${response.status}`);
       }
     }
-    
+
     testResults.webhooks.status = 'PASS';
     testResults.webhooks.details = webhookResults;
-    
   } catch (error) {
     testResults.webhooks.status = 'FAIL';
     testResults.webhooks.details.push(`Webhook check failed: ${error.message}`);
@@ -274,29 +281,30 @@ async function checkWebhooks() {
 async function checkTemplates() {
   try {
     const templateResults = [];
-    
+
     const testPayloads = [
       { trigger: 'order_created', body: 'Hello {{ customer.first_name }}!' },
       { trigger: 'abandoned_checkout', body: 'Complete your order: {{ recovery_url }}' },
       { trigger: 'welcome', body: 'Welcome to {{ shop.name }}!' },
     ];
-    
+
     for (const payload of testPayloads) {
       const response = await makeRequest(`${config.baseUrl}/templates/preview`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      
+
       if (response.status === 200 && response.data.ok) {
         templateResults.push(`${payload.trigger}: OK`);
       } else {
-        templateResults.push(`${payload.trigger}: ${response.status} - ${response.data.error || 'Unknown error'}`);
+        templateResults.push(
+          `${payload.trigger}: ${response.status} - ${response.data.error || 'Unknown error'}`,
+        );
       }
     }
-    
+
     testResults.templates.status = 'PASS';
     testResults.templates.details = templateResults;
-    
   } catch (error) {
     testResults.templates.status = 'FAIL';
     testResults.templates.details.push(`Template check failed: ${error.message}`);
@@ -307,7 +315,7 @@ async function checkTemplates() {
 async function checkCampaigns() {
   try {
     const campaignResults = [];
-    
+
     // Test campaigns endpoint
     const campaignsResponse = await makeRequest(`${config.baseUrl}/campaigns`);
     if (campaignsResponse.status === 401) {
@@ -315,7 +323,7 @@ async function checkCampaigns() {
     } else {
       campaignResults.push(`Campaigns endpoint returned ${campaignsResponse.status}`);
     }
-    
+
     // Test discounts endpoint
     const discountsResponse = await makeRequest(`${config.baseUrl}/discounts`);
     if (discountsResponse.status === 401) {
@@ -323,10 +331,9 @@ async function checkCampaigns() {
     } else {
       campaignResults.push(`Discounts endpoint returned ${discountsResponse.status}`);
     }
-    
+
     testResults.campaigns.status = 'PASS';
     testResults.campaigns.details = campaignResults;
-    
   } catch (error) {
     testResults.campaigns.status = 'FAIL';
     testResults.campaigns.details.push(`Campaigns check failed: ${error.message}`);
@@ -337,35 +344,34 @@ async function checkCampaigns() {
 async function checkReports() {
   try {
     const reportResults = [];
-    
+
     // Test reports endpoint twice to check cache
     const report1 = await makeRequest(`${config.baseUrl}/reports/overview`);
     const report2 = await makeRequest(`${config.baseUrl}/reports/overview`);
-    
+
     if (report1.status === 200 && report2.status === 200) {
       const cache1 = report1.headers['x-cache'];
       const cache2 = report2.headers['x-cache'];
-      
+
       if (cache1 === 'MISS' && cache2 === 'HIT') {
         reportResults.push('Cache working correctly (MISS -> HIT)');
       } else {
         reportResults.push(`Cache headers: ${cache1} -> ${cache2}`);
       }
-      
+
       // Check latency
       const latency1 = report1.headers['x-response-time'];
       const latency2 = report2.headers['x-response-time'];
-      
+
       if (latency1 && latency2) {
         reportResults.push(`Latency: ${latency1}ms -> ${latency2}ms`);
       }
     } else {
       reportResults.push(`Reports endpoint returned ${report1.status} / ${report2.status}`);
     }
-    
+
     testResults.reports.status = 'PASS';
     testResults.reports.details = reportResults;
-    
   } catch (error) {
     testResults.reports.status = 'FAIL';
     testResults.reports.details.push(`Reports check failed: ${error.message}`);
@@ -376,7 +382,7 @@ async function checkReports() {
 async function checkMetrics() {
   try {
     const metricsResponse = await makeRequest(`${config.baseUrl}/metrics`);
-    
+
     if (metricsResponse.status === 200) {
       const metricsText = metricsResponse.text;
       const requiredMetrics = [
@@ -387,17 +393,20 @@ async function checkMetrics() {
         'webhook_events_total',
         'rate_limit_hits_total',
       ];
-      
-      const foundMetrics = requiredMetrics.filter(metric => metricsText.includes(metric));
-      
+
+      const foundMetrics = requiredMetrics.filter((metric) => metricsText.includes(metric));
+
       testResults.metrics.status = 'PASS';
-      testResults.metrics.details.push(`Found ${foundMetrics.length}/${requiredMetrics.length} required metrics`);
-      testResults.metrics.details.push(`Missing: ${requiredMetrics.filter(m => !foundMetrics.includes(m)).join(', ')}`);
+      testResults.metrics.details.push(
+        `Found ${foundMetrics.length}/${requiredMetrics.length} required metrics`,
+      );
+      testResults.metrics.details.push(
+        `Missing: ${requiredMetrics.filter((m) => !foundMetrics.includes(m)).join(', ')}`,
+      );
     } else {
       testResults.metrics.status = 'FAIL';
       testResults.metrics.details.push(`Metrics endpoint returned ${metricsResponse.status}`);
     }
-    
   } catch (error) {
     testResults.metrics.status = 'FAIL';
     testResults.metrics.details.push(`Metrics check failed: ${error.message}`);
@@ -410,7 +419,7 @@ async function runGoLiveVerification() {
   console.log(`📍 Base URL: ${config.baseUrl}`);
   console.log(`🏪 Dev Shop: ${config.devShopDomain}`);
   console.log('');
-  
+
   // Run all checks
   checkEnvironment();
   await checkDatabase();
@@ -422,10 +431,10 @@ async function runGoLiveVerification() {
   await checkCampaigns();
   await checkReports();
   await checkMetrics();
-  
+
   // Generate dashboard
   await generateDashboard();
-  
+
   // Print executive summary
   printExecutiveSummary();
 }
@@ -434,7 +443,7 @@ async function runGoLiveVerification() {
 async function generateDashboard() {
   const timestamp = new Date().toISOString();
   const maskedShop = config.devShopDomain.replace(/\.myshopify\.com$/, '.***');
-  
+
   const dashboard = `# Go-Live Dashboard
 
 **Date/Time:** ${timestamp} (UTC)  
@@ -467,7 +476,7 @@ ${getNextSteps()}
 
   // Write dashboard to file
   fs.writeFileSync('reports/GO_LIVE_DASHBOARD.md', dashboard);
-  
+
   console.log('📊 Dashboard generated: reports/GO_LIVE_DASHBOARD.md');
 }
 
@@ -476,22 +485,22 @@ function getCriticalIssues() {
   const critical = Object.entries(testResults)
     .filter(([_, result]) => result.status === 'FAIL')
     .map(([component, result]) => `- **${component}**: ${result.details.join('; ')}`);
-  
+
   if (critical.length === 0) {
     return 'None - All systems operational! 🎉';
   }
-  
+
   return critical.join('\n');
 }
 
 // Get next steps
 function getNextSteps() {
   const failed = Object.entries(testResults).filter(([_, result]) => result.status === 'FAIL');
-  
+
   if (failed.length === 0) {
     return '✅ **Ready for Production!** All systems are operational.';
   }
-  
+
   return `❌ **${failed.length} critical issues** must be resolved before go-live.`;
 }
 
@@ -499,11 +508,11 @@ function getNextSteps() {
 function printExecutiveSummary() {
   const failed = Object.entries(testResults).filter(([_, result]) => result.status === 'FAIL');
   const warned = Object.entries(testResults).filter(([_, result]) => result.status === 'WARN');
-  
+
   console.log('\n' + '='.repeat(60));
   console.log('🎯 EXECUTIVE SUMMARY');
   console.log('='.repeat(60));
-  
+
   if (failed.length === 0) {
     console.log('✅ **READY FOR PRODUCTION**');
     console.log('All critical systems are operational.');
@@ -514,14 +523,14 @@ function printExecutiveSummary() {
       console.log(`  - ${component}: ${result.details[0]}`);
     });
   }
-  
+
   if (warned.length > 0) {
     console.log(`⚠️  Warnings: ${warned.length}`);
     warned.forEach(([component, result]) => {
       console.log(`  - ${component}: ${result.details[0]}`);
     });
   }
-  
+
   console.log('\n📊 Dashboard: reports/GO_LIVE_DASHBOARD.md');
   console.log('📋 Runbook: reports/GO_LIVE_RUNBOOK.md');
   console.log('='.repeat(60));

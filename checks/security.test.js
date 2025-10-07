@@ -10,12 +10,10 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
 describe('Security Validation', () => {
   describe('App Proxy HMAC Verification', () => {
     it('should reject unsigned App Proxy requests', async () => {
-      const response = await request(BASE_URL)
-        .get('/public/unsubscribe')
-        .query({
-          shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
-        });
+      const response = await request(BASE_URL).get('/public/unsubscribe').query({
+        shop: 'test-shop.myshopify.com',
+        phone: '+306912345678',
+      });
 
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error', 'invalid_signature');
@@ -24,12 +22,10 @@ describe('Security Validation', () => {
     it('should accept signed App Proxy requests', async () => {
       const signedQuery = createSignedAppProxyQuery({
         shop: 'test-shop.myshopify.com',
-        phone: '+306912345678'
+        phone: '+306912345678',
       });
 
-      const response = await request(BASE_URL)
-        .get('/public/unsubscribe')
-        .query(signedQuery);
+      const response = await request(BASE_URL).get('/public/unsubscribe').query(signedQuery);
 
       // Should either succeed or fail with shop not found (not auth error)
       expect([200, 404, 422]).toContain(response.status);
@@ -43,7 +39,7 @@ describe('Security Validation', () => {
           shop: 'test-shop.myshopify.com',
           phone: '+306912345678',
           timestamp: Math.floor(Date.now() / 1000).toString(),
-          signature: 'invalid-signature'
+          signature: 'invalid-signature',
         });
 
       expect(response.status).toBe(401);
@@ -51,7 +47,7 @@ describe('Security Validation', () => {
 
     it('should handle storefront consent with proper signature', async () => {
       const signedQuery = createSignedAppProxyQuery({
-        shop: 'test-shop.myshopify.com'
+        shop: 'test-shop.myshopify.com',
       });
 
       const response = await request(BASE_URL)
@@ -59,7 +55,7 @@ describe('Security Validation', () => {
         .query(signedQuery)
         .send({
           phone: '+306912345678',
-          email: 'test@example.com'
+          email: 'test@example.com',
         });
 
       // Should either succeed or fail with proper error (not auth error)
@@ -70,17 +66,10 @@ describe('Security Validation', () => {
 
   describe('JWT Authentication', () => {
     it('should require JWT for protected admin routes', async () => {
-      const protectedRoutes = [
-        '/discounts',
-        '/settings',
-        '/reports',
-        '/automations',
-        '/campaigns'
-      ];
+      const protectedRoutes = ['/discounts', '/settings', '/reports', '/automations', '/campaigns'];
 
       for (const route of protectedRoutes) {
-        const response = await request(BASE_URL)
-          .get(route);
+        const response = await request(BASE_URL).get(route);
 
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('error');
@@ -97,8 +86,7 @@ describe('Security Validation', () => {
     });
 
     it('should reject requests without Authorization header', async () => {
-      const response = await request(BASE_URL)
-        .get('/discounts');
+      const response = await request(BASE_URL).get('/discounts');
 
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error', 'missing_token');
@@ -130,20 +118,18 @@ describe('Security Validation', () => {
     it('should apply rate limits to public endpoints', async () => {
       const signedQuery = createSignedAppProxyQuery({
         shop: 'test-shop.myshopify.com',
-        phone: '+306912345678'
+        phone: '+306912345678',
       });
 
       // Make multiple requests to trigger rate limiting
-      const requests = Array(150).fill().map(() => 
-        request(BASE_URL)
-          .get('/public/unsubscribe')
-          .query(signedQuery)
-      );
+      const requests = Array(150)
+        .fill()
+        .map(() => request(BASE_URL).get('/public/unsubscribe').query(signedQuery));
 
       const responses = await Promise.all(requests);
-      
+
       // Should have some 429 responses
-      const rateLimited = responses.filter(r => r.status === 429);
+      const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
 
       // Check for rate limit headers
@@ -156,10 +142,12 @@ describe('Security Validation', () => {
     it('should include rate limit headers in responses', async () => {
       const response = await request(BASE_URL)
         .get('/public/unsubscribe')
-        .query(createSignedAppProxyQuery({
-          shop: 'test-shop.myshopify.com',
-          phone: '+306912345678'
-        }));
+        .query(
+          createSignedAppProxyQuery({
+            shop: 'test-shop.myshopify.com',
+            phone: '+306912345678',
+          }),
+        );
 
       expect(response.headers).toHaveProperty('x-ratelimit-limit');
       expect(response.headers).toHaveProperty('x-ratelimit-remaining');
@@ -169,7 +157,7 @@ describe('Security Validation', () => {
   describe('CORS Configuration', () => {
     it('should allow requests from frontend origin', async () => {
       const frontendUrl = process.env.FRONTEND_URL || 'https://sms-blossom-frontend.onrender.com';
-      
+
       const response = await request(BASE_URL)
         .options('/public/storefront/consent')
         .set('Origin', frontendUrl)
@@ -213,8 +201,7 @@ describe('Security Validation', () => {
 
   describe('Error Handling', () => {
     it('should not expose sensitive information in errors', async () => {
-      const response = await request(BASE_URL)
-        .get('/discounts');
+      const response = await request(BASE_URL).get('/discounts');
 
       expect(response.status).toBe(401);
       expect(response.body).not.toHaveProperty('stack');
@@ -224,13 +211,11 @@ describe('Security Validation', () => {
 
     it('should return proper error taxonomy', async () => {
       // Test 401 (Unauthorized)
-      const authResponse = await request(BASE_URL)
-        .get('/discounts');
+      const authResponse = await request(BASE_URL).get('/discounts');
       expect(authResponse.status).toBe(401);
 
       // Test 404 (Not Found)
-      const notFoundResponse = await request(BASE_URL)
-        .get('/nonexistent-route');
+      const notFoundResponse = await request(BASE_URL).get('/nonexistent-route');
       expect(notFoundResponse.status).toBe(404);
 
       // Test 422 (Unprocessable Entity) - invalid data

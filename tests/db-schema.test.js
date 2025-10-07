@@ -15,7 +15,7 @@ describe('Database Schema Validation', () => {
         FROM messages 
         LIMIT 1
       `;
-      
+
       expect(result).toBeDefined();
     });
 
@@ -27,7 +27,7 @@ describe('Database Schema Validation', () => {
         FROM contacts 
         LIMIT 1
       `;
-      
+
       expect(result).toBeDefined();
     });
   });
@@ -43,7 +43,7 @@ describe('Database Schema Validation', () => {
           failedAt: true,
         },
       });
-      
+
       expect(Array.isArray(messages)).toBe(true);
     });
 
@@ -59,7 +59,7 @@ describe('Database Schema Validation', () => {
           email_ciphertext: true,
         },
       });
-      
+
       expect(Array.isArray(contacts)).toBe(true);
     });
 
@@ -70,7 +70,7 @@ describe('Database Schema Validation', () => {
           shop: true,
         },
       });
-      
+
       expect(Array.isArray(campaigns)).toBe(true);
     });
   });
@@ -86,7 +86,7 @@ describe('Database Schema Validation', () => {
           COUNT(failed_at) as failed_count
         FROM messages
       `;
-      
+
       expect(result[0]).toHaveProperty('total');
       expect(result[0]).toHaveProperty('sent_count');
       expect(result[0]).toHaveProperty('delivered_count');
@@ -103,7 +103,7 @@ describe('Database Schema Validation', () => {
           COUNT(email_ciphertext) as email_ciphertext_count
         FROM contacts
       `;
-      
+
       expect(result[0]).toHaveProperty('total');
       expect(result[0]).toHaveProperty('phone_hash_count');
       expect(result[0]).toHaveProperty('phone_ciphertext_count');

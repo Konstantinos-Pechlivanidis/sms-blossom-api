@@ -26,7 +26,7 @@
     "prisma:validate": "prisma validate",
     "prisma:status": "prisma migrate status",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:watch": "vitest --watch",
     "audit": "npm audit --audit-level=high",
     "depcheck": "depcheck --skip-missing true",
     "openapi:lint": "redocly lint openapi/openapi.yaml",
@@ -38,7 +38,6 @@
     "test:contract": "vitest run --reporter=verbose tests/contract/",
     "test:all": "npm run test:unit && npm run test:int && npm run test:contract && npm run test:e2e",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest --watch",
     "build": "npm run prisma:generate && npx prisma migrate deploy",
     "render:build": "npm install && npm run prisma:generate && npx prisma migrate deploy"
   },
@@ -59,6 +58,7 @@
     "pino": "^9.4.0",
     "pino-http": "^11.0.0",
     "pino-pretty": "^13.1.1",
+    "prom-client": "^15.1.3",
     "swagger-ui-express": "^5.0.1",
     "yaml": "^2.8.1",
     "zod": "^3.22.4"

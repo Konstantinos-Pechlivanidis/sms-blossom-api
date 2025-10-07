@@ -38,21 +38,23 @@ describe('Environment Configuration', () => {
       delete process.env.WEBHOOK_HMAC_SECRET;
       delete process.env.WEBHOOK_SECRET;
 
-      expect(() => getWebhookHmacSecret()).toThrow('WEBHOOK_HMAC_SECRET environment variable is required');
+      expect(() => getWebhookHmacSecret()).toThrow(
+        'WEBHOOK_HMAC_SECRET environment variable is required',
+      );
     });
   });
 
   describe('Redis URL', () => {
     it('should use REDIS_URL when set', () => {
       process.env.REDIS_URL = 'redis://custom:6379';
-      
+
       const url = getRedisUrl();
       expect(url).toBe('redis://custom:6379');
     });
 
     it('should fall back to default when not set', () => {
       delete process.env.REDIS_URL;
-      
+
       const url = getRedisUrl();
       expect(url).toBe('redis://localhost:6379');
     });
@@ -61,14 +63,14 @@ describe('Environment Configuration', () => {
   describe('Mitto API Key', () => {
     it('should return API key when set', () => {
       process.env.MITTO_API_KEY = 'test-key';
-      
+
       const key = getMittoApiKey();
       expect(key).toBe('test-key');
     });
 
     it('should throw error when not set', () => {
       delete process.env.MITTO_API_KEY;
-      
+
       expect(() => getMittoApiKey()).toThrow('MITTO_API_KEY environment variable is required');
     });
   });

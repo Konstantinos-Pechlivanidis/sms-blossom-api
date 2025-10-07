@@ -19,15 +19,10 @@ async function runPerformanceSmokeTest() {
     errors: 0,
     latencies: [],
     statusCodes: {},
-    startTime: Date.now()
+    startTime: Date.now(),
   };
 
-  const endpoints = [
-    '/health',
-    '/reports/overview',
-    '/metrics',
-    '/gdpr/status'
-  ];
+  const endpoints = ['/health', '/reports/overview', '/metrics', '/gdpr/status'];
 
   const startTime = performance.now();
   const endTime = startTime + DURATION;
@@ -35,9 +30,9 @@ async function runPerformanceSmokeTest() {
   console.log('🔄 Running load test...');
 
   // Run concurrent requests
-  const promises = Array(CONCURRENCY).fill().map(() => 
-    runWorker(endpoints, endTime, results)
-  );
+  const promises = Array(CONCURRENCY)
+    .fill()
+    .map(() => runWorker(endpoints, endTime, results));
 
   await Promise.all(promises);
 
@@ -69,17 +64,17 @@ async function runPerformanceSmokeTest() {
   // Performance validation
   console.log('\n✅ Performance Validation:');
   const validation = validatePerformance(stats);
-  validation.forEach(result => {
+  validation.forEach((result) => {
     console.log(`   ${result.pass ? '✅' : '❌'} ${result.message}`);
   });
 
-  const allPassed = validation.every(v => v.pass);
+  const allPassed = validation.every((v) => v.pass);
   console.log(`\n🎯 Overall Result: ${allPassed ? 'PASS' : 'FAIL'}`);
 
   return {
     stats,
     validation,
-    passed: allPassed
+    passed: allPassed,
   };
 }
 
@@ -91,11 +86,11 @@ async function runWorker(endpoints, endTime, results) {
     try {
       const response = await fetch(`${BASE_URL}${endpoint}`, {
         method: 'GET',
-        timeout: 5000
+        timeout: 5000,
       });
 
       const latency = performance.now() - start;
-      
+
       results.requests++;
       results.latencies.push(latency);
       results.statusCodes[response.status] = (results.statusCodes[response.status] || 0) + 1;
@@ -103,7 +98,6 @@ async function runWorker(endpoints, endTime, results) {
       if (!response.ok) {
         results.errors++;
       }
-
     } catch (error) {
       const latency = performance.now() - start;
       results.requests++;
@@ -113,7 +107,7 @@ async function runWorker(endpoints, endTime, results) {
     }
 
     // Small delay to prevent overwhelming the server
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
 
@@ -128,11 +122,11 @@ function calculateStats(results, duration) {
       p95: 0,
       p99: 0,
       max: 0,
-      min: 0
+      min: 0,
     };
   }
 
-  const rps = (results.requests / (duration / 1000));
+  const rps = results.requests / (duration / 1000);
   const p50 = latencies[Math.floor(count * 0.5)];
   const p95 = latencies[Math.floor(count * 0.95)];
   const p99 = latencies[Math.floor(count * 0.99)];
@@ -148,26 +142,26 @@ function validatePerformance(stats) {
   // p50 < 200ms
   validation.push({
     pass: stats.p50 < 200,
-    message: `p50 latency < 200ms (actual: ${stats.p50.toFixed(2)}ms)`
+    message: `p50 latency < 200ms (actual: ${stats.p50.toFixed(2)}ms)`,
   });
 
   // p95 < 800ms
   validation.push({
     pass: stats.p95 < 800,
-    message: `p95 latency < 800ms (actual: ${stats.p95.toFixed(2)}ms)`
+    message: `p95 latency < 800ms (actual: ${stats.p95.toFixed(2)}ms)`,
   });
 
   // Error rate < 5%
   const errorRate = (stats.errors / stats.requests) * 100;
   validation.push({
     pass: errorRate < 5,
-    message: `Error rate < 5% (actual: ${errorRate.toFixed(2)}%)`
+    message: `Error rate < 5% (actual: ${errorRate.toFixed(2)}%)`,
   });
 
   // RPS > 10
   validation.push({
     pass: stats.rps > 10,
-    message: `RPS > 10 (actual: ${stats.rps.toFixed(2)})`
+    message: `RPS > 10 (actual: ${stats.rps.toFixed(2)})`,
   });
 
   return validation;
@@ -176,10 +170,10 @@ function validatePerformance(stats) {
 // Run smoke test if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   runPerformanceSmokeTest()
-    .then(result => {
+    .then((result) => {
       process.exit(result.passed ? 0 : 1);
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('❌ Performance test failed:', error.message);
       process.exit(1);
     });

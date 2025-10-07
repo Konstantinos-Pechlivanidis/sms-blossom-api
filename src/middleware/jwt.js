@@ -19,49 +19,55 @@ if (!JWT_SECRET) {
 export function jwtVerifyMiddleware(req, res, next) {
   try {
     const authHeader = req.get('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'missing_token',
-        message: 'Authorization header with Bearer token is required'
+        message: 'Authorization header with Bearer token is required',
       });
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    
+
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      
+
       // Attach user info to request
       req.auth = {
         shop_domain: decoded.shop_domain,
         sub: decoded.sub,
         iat: decoded.iat,
-        exp: decoded.exp
+        exp: decoded.exp,
       };
-      
-      logger.debug({ 
-        shop_domain: decoded.shop_domain,
-        sub: decoded.sub 
-      }, 'JWT token verified successfully');
-      
+
+      logger.debug(
+        {
+          shop_domain: decoded.shop_domain,
+          sub: decoded.sub,
+        },
+        'JWT token verified successfully',
+      );
+
       next();
     } catch (jwtError) {
-      logger.warn({ 
-        error: jwtError.message,
-        token: token.substring(0, 20) + '...' 
-      }, 'JWT verification failed');
-      
-      return res.status(401).json({ 
+      logger.warn(
+        {
+          error: jwtError.message,
+          token: token.substring(0, 20) + '...',
+        },
+        'JWT verification failed',
+      );
+
+      return res.status(401).json({
         error: 'invalid_token',
-        message: 'Invalid or expired token'
+        message: 'Invalid or expired token',
       });
     }
   } catch (error) {
     logger.error({ error }, 'JWT middleware error');
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'internal_error',
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 }
@@ -77,13 +83,13 @@ export function generateJwtToken(shopDomain, sub, options = {}) {
   const payload = {
     shop_domain: shopDomain,
     sub: sub,
-    iat: Math.floor(Date.now() / 1000)
+    iat: Math.floor(Date.now() / 1000),
   };
 
   const jwtOptions = {
     expiresIn: '24h',
     issuer: 'sms-blossom-api',
-    ...options
+    ...options,
   };
 
   return jwt.sign(payload, JWT_SECRET, jwtOptions);

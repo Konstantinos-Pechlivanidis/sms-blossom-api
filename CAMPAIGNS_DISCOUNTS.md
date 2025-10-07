@@ -605,5 +605,3 @@ await enqueueJob('delivery', 'send', {
 - **Queue Health**: Redis connectivity and job processing
 - **External Services**: Shopify API and SMS provider health
 - **System Resources**: Memory, CPU, and disk usage
-
-

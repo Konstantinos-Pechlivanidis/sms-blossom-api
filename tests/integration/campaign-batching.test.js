@@ -491,5 +491,3 @@ describe('Campaign Batching Integration', () => {
     });
   });
 });
-
-

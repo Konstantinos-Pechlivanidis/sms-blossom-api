@@ -334,4 +334,3 @@ describe('Segment Preview', () => {
     });
   });
 });
-

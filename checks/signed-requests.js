@@ -11,10 +11,7 @@ import jwt from 'jsonwebtoken';
  * @returns {string} Base64 encoded HMAC signature
  */
 export function createWebhookHmac(payload, secret) {
-  return crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('base64');
+  return crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('base64');
 }
 
 /**
@@ -24,10 +21,7 @@ export function createWebhookHmac(payload, secret) {
  * @returns {string} HMAC signature
  */
 export function createAppProxyHmac(queryString, secret) {
-  return crypto
-    .createHmac('sha256', secret)
-    .update(queryString, 'utf8')
-    .digest('hex');
+  return crypto.createHmac('sha256', secret).update(queryString, 'utf8').digest('hex');
 }
 
 /**
@@ -52,7 +46,7 @@ export function createSignedAppProxyUrl(baseUrl, subpath, shop, secret) {
   const timestamp = Math.floor(Date.now() / 1000);
   const queryString = `shop=${shop}&timestamp=${timestamp}`;
   const signature = createAppProxyHmac(queryString, secret);
-  
+
   return `${baseUrl}${subpath}?${queryString}&signature=${signature}`;
 }
 
@@ -65,7 +59,7 @@ export function createSignedAppProxyUrl(baseUrl, subpath, shop, secret) {
 export function createWebhookPayload(topic, data, secret) {
   const payload = JSON.stringify(data);
   const hmac = createWebhookHmac(payload, secret);
-  
+
   return {
     payload,
     headers: {
@@ -100,7 +94,7 @@ export const TEST_WEBHOOK_PAYLOADS = {
       },
     ],
   },
-  
+
   'checkouts/update': {
     id: 987654321,
     token: 'test-checkout-token',
@@ -121,14 +115,14 @@ export const TEST_WEBHOOK_PAYLOADS = {
       },
     ],
   },
-  
+
   'inventory_levels/update': {
     inventory_item_id: 123456789,
     location_id: 987654321,
     available: 10,
     updated_at: new Date().toISOString(),
   },
-  
+
   'customers/redact': {
     shop_id: 123456789,
     shop_domain: 'test-shop.myshopify.com',
@@ -137,7 +131,7 @@ export const TEST_WEBHOOK_PAYLOADS = {
       email: 'test@example.com',
     },
   },
-  
+
   'shop/redact': {
     shop_id: 123456789,
     shop_domain: 'test-shop.myshopify.com',
@@ -164,7 +158,7 @@ export const TEST_TEMPLATE_PAYLOADS = {
       },
     },
   },
-  
+
   abandoned_checkout: {
     trigger: 'abandoned_checkout',
     body: 'Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}',
@@ -181,7 +175,7 @@ export const TEST_TEMPLATE_PAYLOADS = {
       recovery_url: 'https://test-shop.myshopify.com/checkout/test-token',
     },
   },
-  
+
   welcome: {
     trigger: 'welcome',
     body: 'Welcome to {{ shop.name }}, {{ customer.first_name }}!',

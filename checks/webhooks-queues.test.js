@@ -18,15 +18,17 @@ describe('Webhooks to Queues E2E', () => {
         customer: {
           id: 987654321,
           email: 'customer@example.com',
-          phone: '+306912345678'
+          phone: '+306912345678',
         },
-        line_items: [{
-          id: 111111111,
-          title: 'Test Product',
-          quantity: 1,
-          price: '29.99'
-        }],
-        shop_domain: 'test-shop.myshopify.com'
+        line_items: [
+          {
+            id: 111111111,
+            title: 'Test Product',
+            quantity: 1,
+            price: '29.99',
+          },
+        ],
+        shop_domain: 'test-shop.myshopify.com',
       };
 
       const { headers, body } = createSignedWebhook(payload);
@@ -45,12 +47,14 @@ describe('Webhooks to Queues E2E', () => {
         token: 'checkout-token-123',
         email: 'customer@example.com',
         phone: '+306912345678',
-        line_items: [{
-          id: 222222222,
-          title: 'Test Product',
-          quantity: 1
-        }],
-        shop_domain: 'test-shop.myshopify.com'
+        line_items: [
+          {
+            id: 222222222,
+            title: 'Test Product',
+            quantity: 1,
+          },
+        ],
+        shop_domain: 'test-shop.myshopify.com',
       };
 
       const { headers, body } = createSignedWebhook(payload);
@@ -68,7 +72,7 @@ describe('Webhooks to Queues E2E', () => {
         inventory_item_id: 333333333,
         location_id: 444444444,
         available: 5,
-        shop_domain: 'test-shop.myshopify.com'
+        shop_domain: 'test-shop.myshopify.com',
       };
 
       const { headers, body } = createSignedWebhook(payload);
@@ -88,7 +92,7 @@ describe('Webhooks to Queues E2E', () => {
         messageId: 'msg_123456789',
         status: 'delivered',
         timestamp: new Date().toISOString(),
-        cost: 0.05
+        cost: 0.05,
       };
 
       const { headers, body } = createSignedMittoWebhook(payload);
@@ -106,7 +110,7 @@ describe('Webhooks to Queues E2E', () => {
         from: '+306912345678',
         to: '+1234567890',
         text: 'STOP',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       const { headers, body } = createSignedMittoWebhook(payload);
@@ -122,19 +126,17 @@ describe('Webhooks to Queues E2E', () => {
 
   describe('Queue Health', () => {
     it('should return queue health status', async () => {
-      const response = await request(BASE_URL)
-        .get('/queue/health');
+      const response = await request(BASE_URL).get('/queue/health');
 
       expect([200, 404]).toContain(response.status);
-      
+
       if (response.status === 200) {
         expect(response.body).toHaveProperty('status');
       }
     });
 
     it('should return queue metrics', async () => {
-      const response = await request(BASE_URL)
-        .get('/queue/metrics');
+      const response = await request(BASE_URL).get('/queue/metrics');
 
       expect([200, 404]).toContain(response.status);
     });
@@ -146,7 +148,7 @@ describe('Webhooks to Queues E2E', () => {
       // For now, we just ensure the webhook endpoints respond correctly
       const payload = {
         id: 123456789,
-        shop_domain: 'test-shop.myshopify.com'
+        shop_domain: 'test-shop.myshopify.com',
       };
 
       const { headers, body } = createSignedWebhook(payload);

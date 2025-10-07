@@ -472,5 +472,3 @@ describe('Webhook Integration Flow', () => {
     });
   });
 });
-
-

@@ -102,5 +102,3 @@ function calculateGsmSegments(charCount) {
     return { parts, chars: charCount, unicode: false };
   }
 }
-
-

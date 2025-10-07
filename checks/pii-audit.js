@@ -47,7 +47,7 @@ async function auditPIIEncryption() {
       coverage,
       encryptionTests,
       lookupTests,
-      plaintextCheck
+      plaintextCheck,
     });
 
     console.log('📋 AUDIT SUMMARY:');
@@ -55,7 +55,6 @@ async function auditPIIEncryption() {
     console.log(summary);
 
     return summary;
-
   } catch (error) {
     console.error('❌ Audit failed:', error.message);
     throw error;
@@ -96,24 +95,26 @@ async function checkDatabaseSchema() {
 async function checkEncryptionCoverage() {
   try {
     const totalContacts = await prisma.contact.count();
-    
+
     const phoneEncrypted = await prisma.contact.count({
-      where: { phone_ciphertext: { not: null } }
-    });
-    
-    const emailEncrypted = await prisma.contact.count({
-      where: { email_ciphertext: { not: null } }
+      where: { phone_ciphertext: { not: null } },
     });
 
-    const phoneCoverage = totalContacts > 0 ? Math.round((phoneEncrypted / totalContacts) * 100) : 0;
-    const emailCoverage = totalContacts > 0 ? Math.round((emailEncrypted / totalContacts) * 100) : 0;
+    const emailEncrypted = await prisma.contact.count({
+      where: { email_ciphertext: { not: null } },
+    });
+
+    const phoneCoverage =
+      totalContacts > 0 ? Math.round((phoneEncrypted / totalContacts) * 100) : 0;
+    const emailCoverage =
+      totalContacts > 0 ? Math.round((emailEncrypted / totalContacts) * 100) : 0;
 
     return {
       totalContacts,
       phoneCoverage,
       emailCoverage,
       phoneEncrypted,
-      emailEncrypted
+      emailEncrypted,
     };
   } catch (error) {
     console.warn('⚠️  Could not check encryption coverage:', error.message);
@@ -126,10 +127,10 @@ async function testEncryptionDecryption() {
     // Test encryption/decryption roundtrip
     const testPhone = '+306912345678';
     const testEmail = 'test@example.com';
-    
+
     const encrypted = {
       phone_ciphertext: { ciphertext: 'test', iv: 'test', tag: 'test' },
-      email_ciphertext: { ciphertext: 'test', iv: 'test', tag: 'test' }
+      email_ciphertext: { ciphertext: 'test', iv: 'test', tag: 'test' },
     };
 
     // Test hash consistency
@@ -140,12 +141,13 @@ async function testEncryptionDecryption() {
     // Test normalization
     const normalizedPhone = normalizePhone('306912345678');
     const normalizedEmail = normalizeEmail('TEST@EXAMPLE.COM');
-    const normalizationSuccess = normalizedPhone === '+306912345678' && normalizedEmail === 'test@example.com';
+    const normalizationSuccess =
+      normalizedPhone === '+306912345678' && normalizedEmail === 'test@example.com';
 
     return {
       roundtripSuccess: true, // Would test actual encryption in real scenario
       hashConsistency,
-      normalizationSuccess
+      normalizationSuccess,
     };
   } catch (error) {
     console.warn('⚠️  Could not test encryption:', error.message);
@@ -158,22 +160,22 @@ async function testHashLookups() {
     // Test phone hash lookup
     const testPhone = '+306912345678';
     const phoneHash = hashDeterministic(testPhone);
-    
+
     const phoneLookup = await prisma.contact.findFirst({
-      where: { phone_hash: phoneHash }
+      where: { phone_hash: phoneHash },
     });
 
     // Test email hash lookup
     const testEmail = 'test@example.com';
     const emailHash = hashDeterministic(testEmail);
-    
+
     const emailLookup = await prisma.contact.findFirst({
-      where: { email_hash: emailHash }
+      where: { email_hash: emailHash },
     });
 
     return {
       phoneLookups: phoneLookup ? 'Found' : 'Not found',
-      emailLookups: emailLookup ? 'Found' : 'Not found'
+      emailLookups: emailLookup ? 'Found' : 'Not found',
     };
   } catch (error) {
     console.warn('⚠️  Could not test hash lookups:', error.message);
@@ -187,26 +189,27 @@ async function checkPlaintextWrites() {
     const recentContacts = await prisma.contact.findMany({
       where: {
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-        }
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+        },
       },
       take: 100,
       select: {
         phoneE164: true,
         email: true,
         phone_ciphertext: true,
-        email_ciphertext: true
-      }
+        email_ciphertext: true,
+      },
     });
 
-    const plaintextWrites = recentContacts.filter(contact => 
-      (contact.phoneE164 && !contact.phone_ciphertext) ||
-      (contact.email && !contact.email_ciphertext)
+    const plaintextWrites = recentContacts.filter(
+      (contact) =>
+        (contact.phoneE164 && !contact.phone_ciphertext) ||
+        (contact.email && !contact.email_ciphertext),
     );
 
     return {
       recentPlaintextWrites: plaintextWrites.length,
-      contactsAnalyzed: recentContacts.length
+      contactsAnalyzed: recentContacts.length,
     };
   } catch (error) {
     console.warn('⚠️  Could not check plaintext writes:', error.message);
@@ -215,13 +218,7 @@ async function checkPlaintextWrites() {
 }
 
 function generateSummary(results) {
-  const {
-    schemaCheck,
-    coverage,
-    encryptionTests,
-    lookupTests,
-    plaintextCheck
-  } = results;
+  const { schemaCheck, coverage, encryptionTests, lookupTests, plaintextCheck } = results;
 
   const criticalIssues = [];
   const warnings = [];
@@ -236,7 +233,9 @@ function generateSummary(results) {
   }
 
   if (plaintextCheck.recentPlaintextWrites > 0) {
-    criticalIssues.push(`❌ Recent plaintext writes detected: ${plaintextCheck.recentPlaintextWrites}`);
+    criticalIssues.push(
+      `❌ Recent plaintext writes detected: ${plaintextCheck.recentPlaintextWrites}`,
+    );
   }
 
   // Check warnings
@@ -253,7 +252,7 @@ function generateSummary(results) {
   }
 
   let summary = '';
-  
+
   if (criticalIssues.length === 0) {
     summary += '✅ PII ENCRYPTION: PRODUCTION READY\n';
   } else {
@@ -266,12 +265,12 @@ function generateSummary(results) {
 
   if (criticalIssues.length > 0) {
     summary += '\n🚨 CRITICAL ISSUES:\n';
-    criticalIssues.forEach(issue => summary += `   ${issue}\n`);
+    criticalIssues.forEach((issue) => (summary += `   ${issue}\n`));
   }
 
   if (warnings.length > 0) {
     summary += '\n⚠️  WARNINGS:\n';
-    warnings.forEach(warning => summary += `   ${warning}\n`);
+    warnings.forEach((warning) => (summary += `   ${warning}\n`));
   }
 
   return summary;

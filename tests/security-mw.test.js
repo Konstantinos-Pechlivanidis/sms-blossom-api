@@ -11,16 +11,16 @@ vi.mock('../src/lib/logger.js', () => ({
   logger: {
     debug: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn()
-  }
+    error: vi.fn(),
+  },
 }));
 
 vi.mock('../src/db/prismaClient.js', () => ({
   getPrismaClient: vi.fn(() => ({
     shop: {
-      findUnique: vi.fn()
-    }
-  }))
+      findUnique: vi.fn(),
+    },
+  })),
 }));
 
 vi.mock('../src/queue/queues.js', () => ({
@@ -32,9 +32,9 @@ vi.mock('../src/queue/queues.js', () => ({
     pipeline: vi.fn(() => ({
       incr: vi.fn().mockReturnThis(),
       expire: vi.fn().mockReturnThis(),
-      exec: vi.fn()
-    }))
-  }))
+      exec: vi.fn(),
+    })),
+  })),
 }));
 
 describe('JWT Middleware', () => {
@@ -43,11 +43,11 @@ describe('JWT Middleware', () => {
   beforeEach(() => {
     req = {
       get: vi.fn(),
-      auth: {}
+      auth: {},
     };
     res = {
       status: vi.fn().mockReturnThis(),
-      json: vi.fn().mockReturnThis()
+      json: vi.fn().mockReturnThis(),
     };
     next = vi.fn();
   });
@@ -71,7 +71,7 @@ describe('JWT Middleware', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       error: 'missing_token',
-      message: 'Authorization header with Bearer token is required'
+      message: 'Authorization header with Bearer token is required',
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -84,7 +84,7 @@ describe('JWT Middleware', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       error: 'missing_token',
-      message: 'Authorization header with Bearer token is required'
+      message: 'Authorization header with Bearer token is required',
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -97,7 +97,7 @@ describe('JWT Middleware', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       error: 'invalid_token',
-      message: 'Invalid or expired token'
+      message: 'Invalid or expired token',
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -112,18 +112,18 @@ describe('Shop Scoping Middleware', () => {
       auth: {},
       get: vi.fn(),
       query: {},
-      shop: {}
+      shop: {},
     };
     res = {
       status: vi.fn().mockReturnThis(),
-      json: vi.fn().mockReturnThis()
+      json: vi.fn().mockReturnThis(),
     };
     next = vi.fn();
 
     mockPrisma = {
       shop: {
-        findUnique: vi.fn()
-      }
+        findUnique: vi.fn(),
+      },
     };
     vi.mocked(require('../src/db/prismaClient.js').getPrismaClient).mockReturnValue(mockPrisma);
   });
@@ -136,7 +136,7 @@ describe('Shop Scoping Middleware', () => {
       name: 'Test Shop',
       timezone: 'UTC',
       locale: 'en-US',
-      settingsJson: {}
+      settingsJson: {},
     });
 
     await shopScopingMiddleware(req, res, next);
@@ -148,7 +148,7 @@ describe('Shop Scoping Middleware', () => {
       name: 'Test Shop',
       timezone: 'UTC',
       locale: 'en-US',
-      settings: {}
+      settings: {},
     });
   });
 
@@ -160,7 +160,7 @@ describe('Shop Scoping Middleware', () => {
       name: 'Test Shop',
       timezone: 'UTC',
       locale: 'en-US',
-      settingsJson: {}
+      settingsJson: {},
     });
 
     await shopScopingMiddleware(req, res, next);
@@ -177,7 +177,7 @@ describe('Shop Scoping Middleware', () => {
       name: 'Test Shop',
       timezone: 'UTC',
       locale: 'en-US',
-      settingsJson: {}
+      settingsJson: {},
     });
 
     await shopScopingMiddleware(req, res, next);
@@ -192,7 +192,7 @@ describe('Shop Scoping Middleware', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       error: 'missing_shop_domain',
-      message: 'Shop domain is required'
+      message: 'Shop domain is required',
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -207,7 +207,7 @@ describe('Shop Scoping Middleware', () => {
     expect(res.json).toHaveBeenCalledWith({
       error: 'shop_not_installed',
       message: 'Shop is not installed or not found',
-      install_url: expect.stringContaining('/auth/install')
+      install_url: expect.stringContaining('/auth/install'),
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -222,12 +222,12 @@ describe('Rate Limiting Middleware', () => {
       path: '/api/admin/test',
       ip: '127.0.0.1',
       shop: { id: 'shop123' },
-      get: vi.fn()
+      get: vi.fn(),
     };
     res = {
       set: vi.fn().mockReturnThis(),
       status: vi.fn().mockReturnThis(),
-      json: vi.fn().mockReturnThis()
+      json: vi.fn().mockReturnThis(),
     };
     next = vi.fn();
 
@@ -238,15 +238,18 @@ describe('Rate Limiting Middleware', () => {
       pipeline: vi.fn(() => ({
         incr: vi.fn().mockReturnThis(),
         expire: vi.fn().mockReturnThis(),
-        exec: vi.fn()
-      }))
+        exec: vi.fn(),
+      })),
     };
     vi.mocked(require('../src/queue/queues.js').getRedisConnection).mockReturnValue(mockRedis);
   });
 
   it('should allow requests within rate limit', async () => {
     mockRedis.get.mockResolvedValue('10'); // Under limit
-    mockRedis.pipeline().exec.mockResolvedValue([[null, 11], [null, 1]]);
+    mockRedis.pipeline().exec.mockResolvedValue([
+      [null, 11],
+      [null, 1],
+    ]);
 
     await rateLimitMiddleware()(req, res, next);
 
@@ -254,7 +257,7 @@ describe('Rate Limiting Middleware', () => {
     expect(res.set).toHaveBeenCalledWith({
       'X-RateLimit-Limit': '600',
       'X-RateLimit-Remaining': expect.any(String),
-      'X-RateLimit-Reset': expect.any(String)
+      'X-RateLimit-Reset': expect.any(String),
     });
   });
 
@@ -267,7 +270,7 @@ describe('Rate Limiting Middleware', () => {
     expect(res.json).toHaveBeenCalledWith({
       error: 'rate_limit_exceeded',
       message: 'Too many requests',
-      retry_after: expect.any(Number)
+      retry_after: expect.any(Number),
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -295,7 +298,7 @@ describe('Rate Limit Check', () => {
 
   beforeEach(() => {
     mockRedis = {
-      get: vi.fn()
+      get: vi.fn(),
     };
     vi.mocked(require('../src/queue/queues.js').getRedisConnection).mockReturnValue(mockRedis);
   });

@@ -294,5 +294,3 @@ logger.error(
   'SMS send failed',
 );
 ```
-
-

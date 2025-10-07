@@ -150,5 +150,3 @@ async function getCampaignAudience(segment, shopId, limit) {
     return [];
   }
 }
-
-

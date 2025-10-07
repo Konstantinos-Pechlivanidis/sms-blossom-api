@@ -146,5 +146,3 @@ function normalizeEventContext(topic, raw, shopId) {
     return null;
   }
 }
-
-
