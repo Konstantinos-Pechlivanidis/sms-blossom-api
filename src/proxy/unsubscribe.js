@@ -7,11 +7,9 @@ import { updateSmsConsent } from '../services/consent.js';
 const router = Router();
 
 router.get('/', async (req, res) => {
-  if (!verifyAppProxySignature(req.query))
-    return res.status(401).type('html').send('<h1>Unauthorized</h1>');
-
+  // App Proxy signature already verified by middleware
   const prisma = getPrismaClient();
-  const shopDomain = String(req.query.shop || '');
+  const shopDomain = req.proxyShopDomain;
   const s = await prisma.shop.findUnique({ where: { domain: shopDomain } });
   if (!s) return res.status(404).type('html').send('<h1>Shop not found</h1>');
 
@@ -41,11 +39,67 @@ router.get('/', async (req, res) => {
     update: { optedOut: true },
   });
 
-  res
-    .type('html')
-    .send(
-      '<h1>Επιτυχής απεγγραφή από SMS</h1><p>Μπορείτε να εγγραφείτε ξανά οποιαδήποτε στιγμή.</p>',
-    );
+  // Check Accept header for HTML vs JSON response
+  const acceptsHtml = req.get('Accept')?.includes('text/html');
+  
+  if (acceptsHtml) {
+    res
+      .type('html')
+      .send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Unsubscribed from SMS</title>
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              margin: 0; 
+              padding: 40px 20px; 
+              background: #f8f9fa; 
+              color: #333;
+            }
+            .container { 
+              max-width: 500px; 
+              margin: 0 auto; 
+              background: white; 
+              padding: 40px; 
+              border-radius: 8px; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 { 
+              color: #28a745; 
+              margin-bottom: 20px; 
+              font-size: 24px;
+            }
+            p { 
+              margin-bottom: 15px; 
+              line-height: 1.5;
+            }
+            .success { 
+              color: #28a745; 
+              font-weight: 500;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>✓ Successfully Unsubscribed</h1>
+            <p class="success">You have been unsubscribed from SMS marketing messages.</p>
+            <p>You will no longer receive promotional SMS messages from this store.</p>
+            <p>If this was a mistake, you can opt-in again during your next checkout.</p>
+          </div>
+        </body>
+        </html>
+      `);
+  } else {
+    res
+      .type('html')
+      .send(
+        '<h1>Επιτυχής απεγγραφή από SMS</h1><p>Μπορείτε να εγγραφείτε ξανά οποιαδήποτε στιγμή.</p>',
+      );
+  }
 });
 
 export default router;

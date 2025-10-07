@@ -41,10 +41,18 @@ model Contact {
   shopId    String
 
   customerId String? // Shopify Customer GID or numeric string (we keep as text)
-  phoneE164  String // normalized E.164 phone
+  phoneE164  String // normalized E.164 phone (deprecated - use phone_ciphertext)
   firstName  String?
   lastName   String?
-  email      String?
+  email      String? // deprecated - use email_ciphertext
+  
+  // PII encryption fields
+  phone_hash         String?  @map("phone_hash")         // SHA256 hash for lookup
+  phone_ciphertext   String?  @map("phone_ciphertext")   // AES-256-GCM encrypted phone
+  phone_last4        String?  @map("phone_last4")         // Last 4 digits for UX
+  email_hash         String?  @map("email_hash")         // SHA256 hash for lookup
+  email_ciphertext   String?  @map("email_ciphertext")    // AES-256-GCM encrypted email
+  
   optedOut   Boolean @default(false)
   // Sprint A: Consent + auditing fields
   smsConsentState  String   @default("unknown") // "opted_in" | "opted_out" | "unknown"
@@ -63,6 +71,8 @@ model Contact {
   @@unique([shopId, phoneE164], name: "shopId_phoneE164")
   @@index([shopId, phoneE164])
   @@index([shopId, email])
+  @@index([shopId, phone_hash])
+  @@index([shopId, email_hash])
 }
 
 model Event {
@@ -131,6 +141,7 @@ model Discount {
   shopId          String
 
   code            String
+  title           String?
   type            String            // 'percentage' | 'amount' | 'shipping'
   value           Decimal? @db.Decimal(10,2)
   currencyCode    String?

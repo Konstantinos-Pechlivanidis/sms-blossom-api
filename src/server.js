@@ -15,17 +15,32 @@ import automationsRouter from './routes/automations.js';
 import docsRouter from './routes/docs.js';
 import * as oauthRouter from './auth/oauth.js';
 import templatesRouter from './routes/templates.js';
+import queueHealthRouter from './routes/queue-health.js';
+import metricsRouter from './routes/metrics.js';
+import { startWorkers } from './queue/worker.js';
 import devRouter from './routes/dev.js';
 import shopifyWebhooksRouter from './webhooks/shopify.js';
+import shopifyOrdersRouter from './webhooks/shopify-orders.js';
+import shopifyFulfillmentsRouter from './webhooks/shopify-fulfillments.js';
+import shopifyCheckoutsRouter from './webhooks/shopify-checkouts.js';
+import shopifyCustomersRouter from './webhooks/shopify-customers.js';
+import shopifyInventoryRouter from './webhooks/shopify-inventory.js';
+import shopifyGdprRouter from './webhooks/shopify-gdpr.js';
 import mittoDlrRouter from './webhooks/mitto-dlr.js';
 import mittoInboundRouter from './webhooks/mitto-inbound.js';
 import gdprRouter from './webhooks/gdpr.js';
+import gdprRestRouter from './routes/gdpr.js';
 import storefrontConsentRouter from './proxy/storefront-consent.js';
 import unsubscribeRouter from './proxy/unsubscribe.js';
 import publicUnsubscribe from './routes/public-unsubscribe.js';
 import publicBackInStock from './routes/public-back-in-stock.js';
+import { appProxyVerifyMiddleware } from './middleware/appProxyVerify.js';
+import { jwtVerifyMiddleware } from './middleware/jwt.js';
+import { shopScopingMiddleware } from './middleware/shopScope.js';
+import { rateLimitMiddleware } from './middleware/rateLimit.js';
 import campaignsRouter from './routes/campaigns.js';
 import segmentsRouter from './routes/segments.js';
+import segmentsPreviewRouter from './routes/segments-preview.js';
 import shortlinksRouter from './routes/shortlinks.js';
 
 const app = express();
@@ -76,29 +91,49 @@ app.use('/auth', (req, res, next) => {
   if (req.method === 'GET' && req.path === '/callback') return oauthRouter.callback(req, res, next);
   return res.status(404).send('Not found');
 });
-app.use('/discounts', discountsRouter);
-app.use('/settings', settingsRouter);
-app.use('/reports', reportsRouter);
-app.use('/automations', automationsRouter);
+app.use('/discounts', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, discountsRouter);
+app.use('/settings', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, settingsRouter);
+app.use('/reports', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, reportsRouter);
+app.use('/automations', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, automationsRouter);
 app.use('/', docsRouter); // /docs and /openapi.json
 app.use('/templates', templatesRouter);
 app.use('/dev', devRouter);
 app.use('/webhooks/shopify', shopifyWebhooksRouter);
+app.use('/webhooks/shopify', shopifyOrdersRouter);
+app.use('/webhooks/shopify', shopifyFulfillmentsRouter);
+app.use('/webhooks/shopify', shopifyCheckoutsRouter);
+app.use('/webhooks/shopify', shopifyCustomersRouter);
+app.use('/webhooks/shopify', shopifyInventoryRouter);
+app.use('/webhooks/shopify', shopifyGdprRouter);
 app.use('/webhooks/gdpr', gdprRouter);
+app.use('/gdpr', gdprRestRouter);
 app.use('/webhooks/mitto/dlr', mittoDlrRouter);
 app.use('/webhooks/mitto/inbound', mittoInboundRouter);
-app.use('/public/storefront/consent', storefrontConsentRouter);
-app.use('/public/unsubscribe', unsubscribeRouter);
-app.use('/public/unsubscribe', publicUnsubscribe);
-app.use('/public/back-in-stock', publicBackInStock);
-app.use('/campaigns', campaignsRouter);
-app.use('/segments', segmentsRouter);
-app.use('/s', shortlinksRouter);
+// App Proxy routes - require signed request verification + rate limiting
+app.use('/public/storefront/consent', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, storefrontConsentRouter);
+app.use('/public/unsubscribe', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, unsubscribeRouter);
+app.use('/public/unsubscribe', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, publicUnsubscribe);
+app.use('/public/back-in-stock', rateLimitMiddleware({ requests: 120, window: 60, burst: 10 }), appProxyVerifyMiddleware, publicBackInStock);
+
+// Admin API routes - require JWT + shop scoping + rate limiting
+app.use('/campaigns', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, campaignsRouter);
+app.use('/segments', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, segmentsRouter);
+app.use('/segments', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, segmentsPreviewRouter);
+app.use('/s', rateLimitMiddleware(), shortlinksRouter);
+app.use('/queue', queueHealthRouter);
+app.use('/metrics', metricsRouter);
 
 // Error handler
 app.use(errorHandler);
 
 const port = Number(process.env.PORT || 3000);
+
+// Start workers (only if Redis is configured)
+startWorkers().catch((error) => {
+  logger.error({ error }, 'Failed to start workers');
+  // Don't exit the process if workers fail - the app can still run with memory queue
+  logger.warn('Continuing without BullMQ workers - using memory queue fallback');
+});
 
 let server = null;
 if (process.env.NODE_ENV !== 'test') {

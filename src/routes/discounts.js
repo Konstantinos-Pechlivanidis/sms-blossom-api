@@ -2,10 +2,10 @@ import { Router } from 'express';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import {
-  createBasicCodeDiscount,
-  buildApplyUrl,
-  scanAutomaticDiscountConflicts,
-} from '../services/discounts.js';
+  createDiscount,
+  buildDiscountApplyUrl,
+  checkDiscountConflicts,
+} from '../services/discounts-service.js';
 import { findShopByDomain } from '../services/contacts.js';
 
 const router = Router();
@@ -54,22 +54,13 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const created = await createBasicCodeDiscount({ shopDomain, ...body });
-    const applyUrl = buildApplyUrl({
-      shopDomain,
-      code: created.code,
+    const result = await createDiscount({
+      shopId: shop.id,
+      ...body,
       redirect: body.redirect || '/cart',
     });
 
-    return res.json({
-      ok: true,
-      code: created.code,
-      title: created.title,
-      id: created.id,
-      startsAt: created.startsAt,
-      endsAt: created.endsAt,
-      applyUrl,
-    });
+    return res.json(result);
   } catch (err) {
     const txt = JSON.stringify(err?.details || err?.message || '');
     // Common Shopify error: code already taken
@@ -88,8 +79,19 @@ router.get('/apply-url', async (req, res) => {
   const redirect = String(req.query.redirect || '/cart');
   if (!shopDomain || !code) return res.status(400).json({ error: 'missing_params' });
 
-  const url = buildApplyUrl({ shopDomain, code, redirect });
-  return res.json({ ok: true, url });
+  const shop = await findShopByDomain(shopDomain);
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await buildDiscountApplyUrl({
+      shopId: shop.id,
+      code,
+      redirect,
+    });
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'build_url_error', details: err.message });
+  }
 });
 
 // Conflict scan with automatic discounts (advisory)
@@ -100,8 +102,12 @@ router.get('/conflicts', async (req, res) => {
   const shop = await findShopByDomain(shopDomain);
   if (!shop) return res.status(400).json({ error: 'unknown_shop' });
 
-  const autos = await scanAutomaticDiscountConflicts({ shopDomain }).catch(() => []);
-  res.json({ ok: true, automaticDiscounts: autos });
+  try {
+    const result = await checkDiscountConflicts({ shopId: shop.id });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'conflict_check_error', details: err.message });
+  }
 });
 
 export default router;

@@ -32,6 +32,13 @@
     "openapi:lint": "redocly lint openapi/openapi.yaml",
     "check": "npm run env:check && npm run lint && npm run format:check && npm run prisma:validate && npm run prisma:status && npm run test && npm run openapi:lint && npm run audit && npm run depcheck",
     "seed:shop": "node src/scripts/seedShop.js",
+    "test:unit": "vitest run --reporter=verbose tests/unit/",
+    "test:int": "vitest run --reporter=verbose tests/integration/",
+    "test:e2e": "vitest run --reporter=verbose tests/e2e/",
+    "test:contract": "vitest run --reporter=verbose tests/contract/",
+    "test:all": "npm run test:unit && npm run test:int && npm run test:contract && npm run test:e2e",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
     "build": "npm run prisma:generate && npx prisma migrate deploy",
     "render:build": "npm install && npm run prisma:generate && npx prisma migrate deploy"
   },
@@ -45,6 +52,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "ioredis": "^5.8.0",
+    "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.11.7",
     "liquidjs": "^10.9.2",
     "nanoid": "^5.0.7",
@@ -52,7 +60,8 @@
     "pino-http": "^11.0.0",
     "pino-pretty": "^13.1.1",
     "swagger-ui-express": "^5.0.1",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

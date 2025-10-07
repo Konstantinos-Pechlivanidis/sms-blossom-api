@@ -1,9 +1,10 @@
 // src/routes/reports.js
-// Reports API routes
+// Reports API routes with Redis caching
 
 import { Router } from 'express';
 import { getPrismaClient } from '../db/prismaClient.js';
 import { parseRange } from '../lib/dates.js';
+import { cacheMiddleware } from '../lib/reports-cache.js';
 import {
   getOverview,
   getCampaignAttribution,
@@ -17,7 +18,7 @@ const router = Router();
 /**
  * GET /reports/overview?shop=<domain>&from=YYYY-MM-DD&to=YYYY-MM-DD&window=7d
  */
-router.get('/overview', async (req, res) => {
+router.get('/overview', cacheMiddleware('overview'), async (req, res) => {
   try {
     const shopDomain = String(req.query.shop || '');
     const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
@@ -38,7 +39,7 @@ router.get('/overview', async (req, res) => {
 /**
  * GET /reports/campaigns?shop=<domain>&from=&to=&window=
  */
-router.get('/campaigns', async (req, res) => {
+router.get('/campaigns', cacheMiddleware('campaigns'), async (req, res) => {
   try {
     const shopDomain = String(req.query.shop || '');
     const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
@@ -58,7 +59,7 @@ router.get('/campaigns', async (req, res) => {
 /**
  * GET /reports/automations?shop=<domain>&from=&to=&window=
  */
-router.get('/automations', async (req, res) => {
+router.get('/automations', cacheMiddleware('automations'), async (req, res) => {
   try {
     const shopDomain = String(req.query.shop || '');
     const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
@@ -78,7 +79,7 @@ router.get('/automations', async (req, res) => {
 /**
  * GET /reports/messaging/timeseries?shop=<domain>&from=&to=&window=
  */
-router.get('/messaging/timeseries', async (req, res) => {
+router.get('/messaging/timeseries', cacheMiddleware('messaging'), async (req, res) => {
   try {
     const shopDomain = String(req.query.shop || '');
     const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });

@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { checkDatabaseHealthy, getPrismaClient } from '../db/prismaClient.js';
+import { checkRedisHealth } from '../queue/queues.js';
 
 const router = Router();
 const prisma = getPrismaClient();
 
 router.get('/', async (req, res) => {
   const db = await checkDatabaseHealthy();
+  const redis = await checkRedisHealth();
   const queue = process.env.QUEUE_DRIVER || 'memory';
 
   // Verify message timestamp fields work (prevent 42703 errors)
@@ -18,7 +20,14 @@ router.get('/', async (req, res) => {
     console.warn('Message timestamp fields check failed:', error.message);
   }
 
-  res.json({ status: 'ok', db, queue, messageTimestamps });
+  res.json({
+    status: 'ok',
+    db,
+    redis,
+    queue,
+    messageTimestamps,
+    queueDriver: process.env.QUEUE_DRIVER || 'memory',
+  });
 });
 
 export default router;

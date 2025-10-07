@@ -18,10 +18,8 @@ const router = Router();
  */
 router.post('/interest', async (req, res) => {
   try {
-    if (!verifyAppProxySignature(req.query)) {
-      return res.status(401).json({ error: 'invalid_signature' });
-    }
-    const shopDomain = String(req.query.shop || '');
+    // App Proxy signature already verified by middleware
+    const shopDomain = req.proxyShopDomain;
     const { phone, inventoryItemId } = (typeof req.body === 'object' && req.body) || {};
     if (!shopDomain || !phone || !inventoryItemId)
       return res.status(422).json({ error: 'missing_params' });

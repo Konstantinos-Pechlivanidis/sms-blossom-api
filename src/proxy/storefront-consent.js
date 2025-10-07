@@ -28,12 +28,8 @@ const schema = {
 const validate = ajv.compile(schema);
 
 router.post('/', async (req, res) => {
-  // Must be called via App Proxy so the signature is present/valid
-  if (!verifyAppProxySignature(req.query)) {
-    return res.status(401).json({ error: 'invalid_signature' });
-  }
-
-  const shopDomain = String(req.query.shop || '');
+  // App Proxy signature already verified by middleware
+  const shopDomain = req.proxyShopDomain;
   const shop = await findShopByDomain(shopDomain); // must resolve by Prisma Shop.domain
   if (!shop) return res.status(400).json({ error: 'unknown_shop' });
 

@@ -5,194 +5,275 @@ import { Router } from 'express';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { getPrismaClient } from '../db/prismaClient.js';
-import { snapshotSegmentToCampaign } from '../services/segments.js';
-import { estimateCost } from '../services/cost.js';
-import { sendCampaignBatched } from '../services/campaigns-sender.js';
-import { renderGateQueueAndSend } from '../services/messages.js';
-import { buildCampaignApplyUrl } from '../services/discounts.js';
+import {
+  createCampaign,
+  getCampaign,
+  listCampaigns,
+  snapshotCampaignAudience,
+  estimateCampaign,
+  testSendCampaign,
+  sendCampaign,
+  attachDiscountToCampaign,
+  detachDiscountFromCampaign,
+  setCampaignUtm,
+  getCampaignApplyUrl,
+} from '../services/campaigns-service.js';
 
 const prisma = getPrismaClient();
 const router = Router();
 const ajv = new Ajv({ allErrors: true, removeAdditional: true });
 addFormats(ajv);
 
+// Helper function to resolve shop
+function resolveShop(req) {
+  return String(req.query.shop || req.get('X-Shopify-Shop-Domain') || '');
+}
+
+// Create campaign
+router.post('/', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
+  const shop = await prisma.shop.findUnique({
+    where: { domain: shopDomain },
+  });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await createCampaign({
+      shopId: shop.id,
+      ...req.body,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'create_campaign_error', details: err.message });
+  }
+});
+
+// Get campaign
+router.get('/:id', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
+  const shop = await prisma.shop.findUnique({
+    where: { domain: shopDomain },
+  });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await getCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'get_campaign_error', details: err.message });
+  }
+});
+
+// List campaigns
+router.get('/', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
+  const shop = await prisma.shop.findUnique({
+    where: { domain: shopDomain },
+  });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await listCampaigns({
+      shopId: shop.id,
+      limit: parseInt(req.query.limit) || 50,
+      offset: parseInt(req.query.offset) || 0,
+      status: req.query.status,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'list_campaigns_error', details: err.message });
+  }
+});
+
 // Snapshot audience from a segment into CampaignRecipient
 router.post('/:id/snapshot', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
 
-  // segmentId optional; or accept filterJson in body
-  const segmentId = camp.segmentId || req.body?.segmentId || null;
-  let filterJson = {};
-  if (segmentId) {
-    const seg = await prisma.segment.findFirst({
-      where: { id: segmentId, shopId: shop.id },
+  try {
+    const result = await snapshotCampaignAudience({
+      shopId: shop.id,
+      campaignId: req.params.id,
     });
-    if (!seg) return res.status(404).json({ error: 'unknown_segment' });
-    filterJson = seg.filterJson || {};
-  } else {
-    filterJson = (typeof req.body === 'object' && req.body?.filterJson) || {};
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'snapshot_campaign_error', details: err.message });
   }
-
-  const { total, inserted } = await snapshotSegmentToCampaign({
-    shopId: shop.id,
-    campaignId: camp.id,
-    filterJson,
-  });
-  res.json({ ok: true, total, inserted });
 });
 
 // Estimate cost for campaign template (or text)
 router.get('/:id/estimate', async (req, res) => {
-  const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
-  });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
 
-  const pending = await prisma.campaignRecipient.count({
-    where: { shopId: shop.id, campaignId: camp.id, status: 'pending' },
+  const shop = await prisma.shop.findUnique({
+    where: { domain: shopDomain },
   });
-  const body = camp.bodyText || `{{ shop.name }}: ${camp.name || 'Campaign'}`; // fallback if no template body stored here
-  const est = estimateCost({ recipients: pending, body });
-  res.json({ ok: true, recipients: pending, ...est });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await estimateCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'estimate_campaign_error', details: err.message });
+  }
 });
 
 // Test send to a specific phone (E.164) without affecting snapshot
 router.post('/:id/test-send', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
   const phone = String(req.body?.phone || '').trim();
   if (!phone) return res.status(422).json({ error: 'missing_phone' });
 
-  // Try to match a contact to apply rules; else treat as ad-hoc contact with opted-in state
-  const contact = await prisma.contact.findFirst({
-    where: { shopId: shop.id, phoneE164: phone },
-  });
-  if (!contact) return res.status(404).json({ error: 'unknown_contact' });
-
-  const result = await renderGateQueueAndSend({
-    shop,
-    contact,
-    phoneE164: contact.phoneE164,
-    templateKey: camp.templateKey || 'campaign',
-    vars: { campaign: { id: camp.id, name: camp.name || 'Campaign' } },
-    kind: 'campaign',
-    triggerKey: `campaign:${camp.id}`,
-    dedupeKey: `test:${camp.id}:${contact.id}`,
-  });
-  res.json({ ok: true, result });
+  try {
+    const result = await testSendCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+      phoneE164: phone,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'test_send_campaign_error', details: err.message });
+  }
 });
 
 // Send now (batched + throttled) — requires prior snapshot
 router.post('/:id/send-now', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
-  const result = await sendCampaignBatched({ shop, campaign: camp });
-  res.json({ ok: true, ...result });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await sendCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'send_campaign_error', details: err.message });
+  }
 });
 
 // Attach a discount to a campaign (by discountId or code in DB)
 router.post('/:id/attach-discount', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
 
-  const { discountId, code } = (typeof req.body === 'object' && req.body) || {};
-  let disc = null;
-  if (discountId)
-    disc = await prisma.discount.findFirst({
-      where: { id: String(discountId), shopId: shop.id },
-    });
-  if (!disc && code)
-    disc = await prisma.discount.findFirst({
-      where: { code: String(code), shopId: shop.id },
-    });
-  if (!disc) return res.status(404).json({ error: 'discount_not_found' });
+  const { discountId } = req.body;
+  if (!discountId) return res.status(422).json({ error: 'missing_discount_id' });
 
-  await prisma.campaign.update({
-    where: { id: camp.id },
-    data: { discountId: disc.id },
-  });
-  res.json({ ok: true, campaignId: camp.id, discountId: disc.id });
+  try {
+    const result = await attachDiscountToCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+      discountId,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'attach_discount_error', details: err.message });
+  }
 });
 
+// Detach discount from campaign
 router.post('/:id/detach-discount', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
-  await prisma.campaign.update({
-    where: { id: camp.id },
-    data: { discountId: null },
-  });
-  res.json({ ok: true });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await detachDiscountFromCampaign({
+      shopId: shop.id,
+      campaignId: req.params.id,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'detach_discount_error', details: err.message });
+  }
 });
 
 // Set UTM for a campaign
 router.put('/:id/utm', async (req, res) => {
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
+
   const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
+    where: { domain: shopDomain },
   });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
-  const utmJson = (typeof req.body === 'object' && req.body) || {};
-  await prisma.campaign.update({ where: { id: camp.id }, data: { utmJson } });
-  res.json({ ok: true, utm: utmJson });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  const utmJson = req.body || {};
+  if (!utmJson || typeof utmJson !== 'object') {
+    return res.status(422).json({ error: 'invalid_utm_json' });
+  }
+
+  try {
+    const result = await setCampaignUtm({
+      shopId: shop.id,
+      campaignId: req.params.id,
+      utmJson,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'set_utm_error', details: err.message });
+  }
 });
 
 // Get a preview of discount apply URL for a campaign
 router.get('/:id/apply-url', async (req, res) => {
-  const shop = await prisma.shop.findUnique({
-    where: { domain: String(req.query.shop || '') },
-  });
-  if (!shop) return res.status(404).json({ error: 'unknown_shop' });
-  const id = String(req.params.id);
-  const camp = await prisma.campaign.findFirst({ where: { id, shopId: shop.id } });
-  if (!camp) return res.status(404).json({ error: 'unknown_campaign' });
+  const shopDomain = resolveShop(req);
+  if (!shopDomain) return res.status(400).json({ error: 'missing_shop' });
 
-  if (!camp.discountId) return res.status(422).json({ error: 'campaign_has_no_discount' });
-  const disc = await prisma.discount.findFirst({
-    where: { id: camp.discountId, shopId: shop.id },
+  const shop = await prisma.shop.findUnique({
+    where: { domain: shopDomain },
   });
-  if (!disc?.code) return res.status(404).json({ error: 'discount_not_found' });
-  const redirect = String(req.query.redirect || '/checkout');
-  const { url, short } = await buildCampaignApplyUrl({
-    shopId: shop.id,
-    shopDomain: shop.domain,
-    code: disc.code,
-    redirect,
-    utm: camp.utmJson || {},
-    short: !!req.query.short,
-    campaignId: camp.id,
-  });
-  res.json({ ok: true, url, short });
+  if (!shop) return res.status(400).json({ error: 'unknown_shop' });
+
+  try {
+    const result = await getCampaignApplyUrl({
+      shopId: shop.id,
+      campaignId: req.params.id,
+    });
+    res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'get_apply_url_error', details: err.message });
+  }
 });
 
 export default router;
