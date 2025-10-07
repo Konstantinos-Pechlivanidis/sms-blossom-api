@@ -5,6 +5,7 @@ This document describes the observability and metrics system for the SMS Blossom
 ## Overview
 
 The observability system provides comprehensive monitoring through:
+
 - Prometheus metrics collection
 - Structured logging with request IDs
 - Health and readiness probes
@@ -18,6 +19,7 @@ The observability system provides comprehensive monitoring through:
 Prometheus-compatible metrics endpoint.
 
 **Response Format:**
+
 ```
 # HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
 # TYPE process_cpu_user_seconds_total counter
@@ -44,6 +46,7 @@ webhook_events_total{topic="orders/paid",status="failed"} 2
 ```
 
 **Status Codes:**
+
 - `200 OK` - Metrics retrieved successfully
 - `401 Unauthorized` - Invalid or missing metrics token
 - `500 Internal Server Error` - Metrics collection failed
@@ -53,6 +56,7 @@ webhook_events_total{topic="orders/paid",status="failed"} 2
 JSON format metrics for debugging and integration.
 
 **Response Format:**
+
 ```json
 {
   "metrics": [
@@ -78,6 +82,7 @@ JSON format metrics for debugging and integration.
 Health check for the metrics endpoint.
 
 **Response Format:**
+
 ```json
 {
   "status": "ok",
@@ -109,7 +114,7 @@ curl -H "Authorization: Bearer your-secure-token" \
 # render.yaml
 envVars:
   - key: METRICS_TOKEN
-    sync: false  # Set via Render dashboard
+    sync: false # Set via Render dashboard
 ```
 
 ## Metrics Categories
@@ -211,7 +216,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: critical
   annotations:
-    summary: "High SMS error rate detected"
+    summary: 'High SMS error rate detected'
 
 # Queue backlog
 - alert: QueueBacklog
@@ -220,7 +225,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: critical
   annotations:
-    summary: "Queue backlog is high"
+    summary: 'Queue backlog is high'
 
 # Webhook failures
 - alert: WebhookFailures
@@ -229,7 +234,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: critical
   annotations:
-    summary: "High webhook failure rate"
+    summary: 'High webhook failure rate'
 ```
 
 ### Warning Alerts
@@ -242,7 +247,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: warning
   annotations:
-    summary: "High queue processing latency"
+    summary: 'High queue processing latency'
 
 # Cache miss rate
 - alert: HighCacheMissRate
@@ -251,7 +256,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: warning
   annotations:
-    summary: "High cache miss rate"
+    summary: 'High cache miss rate'
 
 # Rate limiting
 - alert: RateLimitHits
@@ -260,7 +265,7 @@ pii_coverage_percentage{data_type="phone|email"}
   labels:
     severity: warning
   annotations:
-    summary: "High rate limit hit rate"
+    summary: 'High rate limit hit rate'
 ```
 
 ## Dashboard Queries
@@ -369,20 +374,20 @@ app.use((req, res, next) => {
 ```yaml
 # Performance budgets
 budgets:
-  - metric: "http_request_duration_seconds"
+  - metric: 'http_request_duration_seconds'
     threshold: 0.2
     percentile: 95
-    window: "5m"
-  
-  - metric: "queue_job_duration_seconds"
+    window: '5m'
+
+  - metric: 'queue_job_duration_seconds'
     threshold: 5
     percentile: 95
-    window: "5m"
-  
-  - metric: "sms_send_duration_seconds"
+    window: '5m'
+
+  - metric: 'sms_send_duration_seconds'
     threshold: 2
     percentile: 95
-    window: "5m"
+    window: '5m'
 ```
 
 ## Troubleshooting

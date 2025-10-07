@@ -5,8 +5,9 @@ This document describes the health and readiness monitoring system for the SMS B
 ## Overview
 
 The health system provides comprehensive monitoring of all critical components:
+
 - Database connectivity and performance
-- Redis connectivity and performance  
+- Redis connectivity and performance
 - Queue system health
 - PII encryption coverage
 - Overall system readiness
@@ -18,6 +19,7 @@ The health system provides comprehensive monitoring of all critical components:
 Comprehensive health check that returns the status of all system components.
 
 **Response Format:**
+
 ```json
 {
   "ok": true,
@@ -44,6 +46,7 @@ Comprehensive health check that returns the status of all system components.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Always returns 200, even if subsystems are unhealthy
 - `500 Internal Server Error` - Only if health check itself fails
 
@@ -52,6 +55,7 @@ Comprehensive health check that returns the status of all system components.
 Readiness probe that returns 200 only if all critical systems are healthy.
 
 **Response Format:**
+
 ```json
 {
   "ready": true,
@@ -60,6 +64,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 ```
 
 **Status Codes:**
+
 - `200 OK` - All critical systems healthy
 - `503 Service Unavailable` - One or more critical systems unhealthy
 
@@ -72,6 +77,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 **Critical:** Yes
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -86,6 +92,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 **Critical:** Yes
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -100,6 +107,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 **Critical:** Yes
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -114,6 +122,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 **Critical:** No (graceful degradation)
 
 **Response:**
+
 ```json
 {
   "phone_pct": 95,
@@ -122,6 +131,7 @@ Readiness probe that returns 200 only if all critical systems are healthy.
 ```
 
 **Graceful Degradation:**
+
 - If timeout occurs, returns `null` values
 - Does not affect overall health status
 - Logs warning for monitoring
@@ -135,7 +145,7 @@ async function withTimeout(promise, timeoutMs, operation) {
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => reject(new Error(`${operation} timeout after ${timeoutMs}ms`)), timeoutMs);
   });
-  
+
   const startTime = Date.now();
   try {
     const result = await Promise.race([promise, timeoutPromise]);
@@ -185,16 +195,20 @@ async function withTimeout(promise, timeoutMs, operation) {
 All health checks include structured logging:
 
 ```javascript
-logger.info({ 
-  request_id: requestId, 
-  db: { ok: true, latency_ms: 15 },
-  redis: { ok: true, latency_ms: 8 },
-  queues: { ok: true, workers: 1 },
-  pii: { phone_pct: 95, email_pct: 98 }
-}, 'Health check completed');
+logger.info(
+  {
+    request_id: requestId,
+    db: { ok: true, latency_ms: 15 },
+    redis: { ok: true, latency_ms: 8 },
+    queues: { ok: true, workers: 1 },
+    pii: { phone_pct: 95, email_pct: 98 },
+  },
+  'Health check completed',
+);
 ```
 
 **Log Levels:**
+
 - `info` - Successful health checks
 - `warn` - Subsystem failures (non-critical)
 - `error` - Health check system failures
@@ -230,16 +244,16 @@ sms_blossom_pii_coverage_percentage{data_type="email"} 98
   labels:
     severity: critical
   annotations:
-    summary: "Database health check failing"
+    summary: 'Database health check failing'
 
-# Redis health alert  
+# Redis health alert
 - alert: RedisUnhealthy
   expr: sms_blossom_health_check_status{component="redis"} == 0
   for: 1m
   labels:
     severity: critical
   annotations:
-    summary: "Redis health check failing"
+    summary: 'Redis health check failing'
 
 # High latency alert
 - alert: HighHealthCheckLatency
@@ -248,7 +262,7 @@ sms_blossom_pii_coverage_percentage{data_type="email"} 98
   labels:
     severity: warning
   annotations:
-    summary: "Health check latency is high"
+    summary: 'Health check latency is high'
 ```
 
 ## Load Balancer Integration

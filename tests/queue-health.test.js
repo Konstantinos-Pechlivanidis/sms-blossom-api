@@ -8,7 +8,7 @@ import queueHealthRouter from '../src/routes/queue-health.js';
 
 // Mock dependencies
 vi.mock('../src/queue/queues.js', () => ({
-  getQueue: vi.fn(),
+  createQueue: vi.fn(),
   getRedisConnection: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ vi.mock('../src/lib/logger.js', () => ({
 
 describe('Queue Health Endpoints', () => {
   let app;
-  let mockGetQueue;
+  let mockCreateQueue;
   let mockGetRedisConnection;
   let mockRedis;
   let mockQueue;
@@ -33,8 +33,8 @@ describe('Queue Health Endpoints', () => {
     app.use('/queue', queueHealthRouter);
 
     // Get mocked functions
-    const { getQueue, getRedisConnection } = await import('../src/queue/queues.js');
-    mockGetQueue = getQueue;
+    const { createQueue, getRedisConnection } = await import('../src/queue/queues.js');
+    mockCreateQueue = createQueue;
     mockGetRedisConnection = getRedisConnection;
 
     // Mock Redis connection
@@ -72,7 +72,7 @@ describe('Queue Health Endpoints', () => {
       mockQueue.getDelayed.mockResolvedValue([]);
 
       // Mock all queues
-      mockGetQueue.mockReturnValue(mockQueue);
+      mockCreateQueue.mockReturnValue(mockQueue);
 
       const response = await request(app).get('/queue/health').expect(200);
 
@@ -125,7 +125,7 @@ describe('Queue Health Endpoints', () => {
 
       // Mock queue count failure
       mockQueue.getWaiting.mockRejectedValue(new Error('Queue count failed'));
-      mockGetQueue.mockReturnValue(mockQueue);
+      mockCreateQueue.mockReturnValue(mockQueue);
 
       const response = await request(app).get('/queue/health').expect(200);
 
@@ -143,7 +143,7 @@ describe('Queue Health Endpoints', () => {
 
     it('should include request ID in response', async () => {
       mockRedis.ping.mockResolvedValue('PONG');
-      mockGetQueue.mockReturnValue(mockQueue);
+      mockCreateQueue.mockReturnValue(mockQueue);
       mockQueue.getWaiting.mockResolvedValue([]);
       mockQueue.getActive.mockResolvedValue([]);
       mockQueue.getCompleted.mockResolvedValue([]);
@@ -167,7 +167,7 @@ describe('Queue Health Endpoints', () => {
       mockQueue.getCompleted.mockResolvedValue([{ id: 3 }]);
       mockQueue.getFailed.mockResolvedValue([{ id: 4 }]);
       mockQueue.getDelayed.mockResolvedValue([{ id: 5 }]);
-      mockGetQueue.mockReturnValue(mockQueue);
+      mockCreateQueue.mockReturnValue(mockQueue);
 
       const response = await request(app).get('/queue/metrics').expect(200);
 

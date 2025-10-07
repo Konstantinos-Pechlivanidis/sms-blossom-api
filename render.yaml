@@ -20,7 +20,7 @@ services:
       # Database - set via Render dashboard
       - key: DATABASE_URL
         sync: false
-      # Redis - set via Render dashboard  
+      # Redis - set via Render dashboard
       - key: REDIS_URL
         sync: false
       # Security - set via Render dashboard

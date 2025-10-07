@@ -5,6 +5,7 @@ This document provides step-by-step instructions for deploying the SMS Blossom b
 ## Overview
 
 The SMS Blossom backend consists of two services:
+
 1. **Web API Service** - Handles HTTP requests, webhooks, and API endpoints
 2. **Worker Service** - Processes background jobs and queue tasks
 
@@ -253,12 +254,14 @@ curl https://your-service.onrender.com/metrics
 ## Support
 
 For deployment issues:
+
 1. Check Render service logs
 2. Verify environment variables
 3. Test health endpoints
 4. Check database and Redis connectivity
 
 For application issues:
+
 1. Check application logs
 2. Verify API endpoints
 3. Test webhook delivery

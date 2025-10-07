@@ -26,7 +26,7 @@ async function withTimeout(promise, timeoutMs, operation) {
 // Database health check with timeout
 async function checkDatabaseHealth() {
   try {
-    const { result, latency } = await withTimeout(
+    const { latency } = await withTimeout(
       prisma.$queryRaw`SELECT 1 as health_check`,
       800,
       'Database health check',

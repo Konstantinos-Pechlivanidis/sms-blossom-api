@@ -59,7 +59,7 @@ describe('Health and Readiness Endpoints', () => {
       mockCheckRedisHealth.mockResolvedValue(true);
 
       const response = await request(app).get('/health');
-      
+
       if (response.status !== 200) {
         console.log('Health endpoint error:', response.body);
         console.log('Status:', response.status);

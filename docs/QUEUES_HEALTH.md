@@ -5,6 +5,7 @@ This document describes the queue health monitoring system for the SMS Blossom b
 ## Overview
 
 The queue health system provides comprehensive monitoring of the BullMQ queue infrastructure:
+
 - Redis connectivity status
 - Queue job counts (waiting, active, completed, failed, delayed)
 - Dead Letter Queue (DLQ) monitoring
@@ -17,6 +18,7 @@ The queue health system provides comprehensive monitoring of the BullMQ queue in
 Comprehensive queue health check that returns the status of all queues and Redis.
 
 **Response Format:**
+
 ```json
 {
   "redis": true,
@@ -67,6 +69,7 @@ Comprehensive queue health check that returns the status of all queues and Redis
 ```
 
 **Status Codes:**
+
 - `200 OK` - Always returns 200, even if Redis is down
 - `500 Internal Server Error` - Only if queue health check itself fails
 
@@ -75,6 +78,7 @@ Comprehensive queue health check that returns the status of all queues and Redis
 Detailed queue metrics for monitoring and alerting.
 
 **Response Format:**
+
 ```json
 {
   "metrics": [
@@ -101,6 +105,7 @@ Detailed queue metrics for monitoring and alerting.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Queue metrics retrieved successfully
 - `503 Service Unavailable` - Redis not available
 
@@ -145,6 +150,7 @@ Detailed queue metrics for monitoring and alerting.
 **Critical:** Yes
 
 **Response:**
+
 ```json
 {
   "redis": true
@@ -152,6 +158,7 @@ Detailed queue metrics for monitoring and alerting.
 ```
 
 **Error Response:**
+
 ```json
 {
   "redis": false,
@@ -167,6 +174,7 @@ Detailed queue metrics for monitoring and alerting.
 **Critical:** No (graceful degradation)
 
 **Methods Used:**
+
 - `queue.getWaiting()` - Jobs waiting to be processed
 - `queue.getActive()` - Jobs currently being processed
 - `queue.getCompleted()` - Successfully completed jobs
@@ -174,6 +182,7 @@ Detailed queue metrics for monitoring and alerting.
 - `queue.getDelayed()` - Delayed/scheduled jobs
 
 **Error Handling:**
+
 - Individual queue failures don't affect overall health
 - Failed queues return zero counts
 - Errors are logged for monitoring
@@ -185,6 +194,7 @@ Detailed queue metrics for monitoring and alerting.
 **Critical:** No (monitoring only)
 
 **Response:**
+
 ```json
 {
   "dlq": {
@@ -254,7 +264,7 @@ sms_blossom_dlq_jobs_total{queue="delivery"} 2
   labels:
     severity: critical
   annotations:
-    summary: "Redis connection lost"
+    summary: 'Redis connection lost'
 
 # High failed job count
 - alert: HighFailedJobs
@@ -263,7 +273,7 @@ sms_blossom_dlq_jobs_total{queue="delivery"} 2
   labels:
     severity: warning
   annotations:
-    summary: "High number of failed jobs"
+    summary: 'High number of failed jobs'
 
 # Queue backlog alert
 - alert: QueueBacklog
@@ -272,7 +282,7 @@ sms_blossom_dlq_jobs_total{queue="delivery"} 2
   labels:
     severity: warning
   annotations:
-    summary: "Queue backlog is high"
+    summary: 'Queue backlog is high'
 
 # DLQ alert
 - alert: DeadLetterQueue
@@ -281,7 +291,7 @@ sms_blossom_dlq_jobs_total{queue="delivery"} 2
   labels:
     severity: warning
   annotations:
-    summary: "Jobs in dead letter queue"
+    summary: 'Jobs in dead letter queue'
 ```
 
 ## Performance Monitoring
@@ -315,11 +325,11 @@ sms_blossom_dlq_jobs_total{queue="delivery"} 2
 rate(sms_blossom_queue_jobs_total{status="waiting"}[5m])
 
 # Job success rate
-rate(sms_blossom_queue_jobs_total{status="completed"}[5m]) / 
+rate(sms_blossom_queue_jobs_total{status="completed"}[5m]) /
 rate(sms_blossom_queue_jobs_total{status="completed"}[5m] + sms_blossom_queue_jobs_total{status="failed"}[5m])
 
 # Average processing time
-rate(sms_blossom_queue_job_duration_seconds_sum[5m]) / 
+rate(sms_blossom_queue_job_duration_seconds_sum[5m]) /
 rate(sms_blossom_queue_job_duration_seconds_count[5m])
 ```
 

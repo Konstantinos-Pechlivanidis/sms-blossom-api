@@ -2,7 +2,7 @@
 // Queue health endpoint for BullMQ monitoring
 
 import { Router } from 'express';
-import { getQueue, getRedisConnection } from '../queue/queues.js';
+import { createQueue, getRedisConnection } from '../queue/queues.js';
 import { logger } from '../lib/logger.js';
 
 const router = Router();
@@ -10,7 +10,7 @@ const router = Router();
 // Get queue counts for a specific queue
 async function getQueueCounts(queueName) {
   try {
-    const queue = getQueue(queueName);
+    const queue = createQueue(queueName);
     if (!queue) {
       return { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 };
     }
@@ -34,8 +34,8 @@ async function getQueueCounts(queueName) {
 async function getDlqCounts() {
   try {
     // For now, we'll use failed jobs as DLQ
-    const eventsQueue = getQueue('events');
-    const deliveryQueue = getQueue('delivery');
+    const eventsQueue = createQueue('events');
+    const deliveryQueue = createQueue('delivery');
 
     const [eventsFailed, deliveryFailed] = await Promise.all([
       eventsQueue ? eventsQueue.getFailed().then((jobs) => jobs.length) : 0,
