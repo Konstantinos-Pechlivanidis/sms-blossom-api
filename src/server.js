@@ -42,6 +42,8 @@ import campaignsRouter from './routes/campaigns.js';
 import segmentsRouter from './routes/segments.js';
 import segmentsPreviewRouter from './routes/segments-preview.js';
 import shortlinksRouter from './routes/shortlinks.js';
+import discountPoolingRouter from './routes/discount-pooling.js';
+import campaignPreparationRouter from './routes/campaign-preparation.js';
 
 const app = express();
 
@@ -182,6 +184,8 @@ app.use(
   segmentsPreviewRouter,
 );
 app.use('/s', rateLimitMiddleware(), shortlinksRouter);
+app.use('/discounts', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, discountPoolingRouter);
+app.use('/campaigns', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, campaignPreparationRouter);
 app.use('/queue', queueHealthRouter);
 app.use('/metrics', metricsRouter);
 

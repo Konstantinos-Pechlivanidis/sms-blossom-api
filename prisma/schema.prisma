@@ -37,6 +37,13 @@ model Shop {
   segments Segment[]
   campaignRecipients CampaignRecipient[]
   campaigns Campaign[]
+  
+  // New relations for discount pooling and automations
+  discountCodePools DiscountCodePool[]
+  discountCodes DiscountCode[]
+  discountCodeReservations DiscountCodeReservation[]
+  automations Automation[]
+  abandonedCheckouts AbandonedCheckout[]
 }
 
 model Contact {
@@ -90,6 +97,17 @@ model Event {
   objectId  String?
   raw       Json
   dedupeKey String   @unique
+  
+  // New fields for webhook processing
+  idempotencyKey String?  // For webhook deduplication
+  checkoutToken  String?  // For abandoned checkout tracking
+  orderId        String?  // For order-related events
+  hmacHeader     String?  // HMAC signature for verification
+
+  @@index([shopId, topic])
+  @@index([shopId, idempotencyKey])
+  @@index([shopId, checkoutToken])
+  @@index([shopId, orderId])
 }
 
 model Message {
@@ -114,11 +132,18 @@ model Message {
   sentAt      DateTime? @map("sent_at")
   deliveredAt DateTime? @map("delivered_at")
   failedAt    DateTime? @map("failed_at")
+  
+  // New fields for discount and link tracking
+  discountCodeId String?
+  shortlinkId    String?
+  utmJson        Json?
 
   @@index([shopId, contactId])
   @@index([shopId, contactId, triggerKey])
   @@index([shopId, status, sentAt])
   @@index([shopId, sentAt])
+  @@index([shopId, discountCodeId])
+  @@index([shopId, shortlinkId])
 }
 
 model Job {
@@ -159,8 +184,20 @@ model Discount {
   providerId      String?          // Shopify CodeDiscountNode id or code handle
   status          String?          // active|expired|scheduled
   utmJson         Json?
+  
+  // New fields for discount pooling
+  mode            String   @default("shared") // 'shared' | 'pool' | 'external'
+  shopifyGid      String?  // Shopify discount GID
+  combinesWith    Json?    // Shopify combinesWith settings
+  
+  // Relations
+  pool            DiscountCodePool?
+  poolId          String?
+  codes           DiscountCode[]
 
   @@index([shopId, code])
+  @@index([shopId, mode])
+  @@index([shopId, poolId])
 }
 
 model AuditLog {
@@ -217,6 +254,7 @@ model CampaignRecipient {
   updatedAt   DateTime @updatedAt
   shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   shopId      String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId  String
   contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId   String
@@ -257,6 +295,131 @@ model Campaign {
   batchSize   Int?
   bodyText    String?
   discountId  String?                                 // <—— Sprint F
+  
+  // New discount configuration
+  discountConfig Json?  // { mode, discountId, codeStrategy, redirectPath }
+  
+  // Relations
+  recipients CampaignRecipient[]
+  discountCodeReservations DiscountCodeReservation[]
+  
   // add an index for fast lookups
   @@index([shopId, status, scheduleAt])
+}
+
+// New models for discount pooling and automations
+model DiscountCodePool {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  discount    Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId  String   @unique
+  
+  name        String
+  description String?
+  totalCodes  Int      @default(0)
+  reservedCodes Int    @default(0)
+  usedCodes   Int      @default(0)
+  status      String   @default("active") // active|inactive|exhausted
+  
+  // Relations
+  codes       DiscountCode[]
+  reservations DiscountCodeReservation[]
+  
+  @@unique([shopId, discountId])
+  @@index([shopId, status])
+}
+
+model DiscountCode {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  pool        DiscountCodePool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  poolId      String
+  discount    Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId  String
+  
+  code        String
+  status      String   @default("available") // available|reserved|used|expired
+  reservedAt  DateTime?
+  usedAt      DateTime?
+  assignedTo  String?  // CampaignRecipient ID when assigned
+  shopifyGid  String?  // Shopify discount code GID
+  
+  // Relations
+  reservation DiscountCodeReservation? @relation(fields: [reservationId], references: [id])
+  reservationId String?
+  
+  @@unique([poolId, code])
+  @@index([shopId, status])
+  @@index([shopId, assignedTo])
+  @@index([shopId, poolId, status])
+}
+
+model DiscountCodeReservation {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  pool        DiscountCodePool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  poolId      String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId  String
+  
+  quantity    Int
+  status      String   @default("active") // active|used|expired|cancelled
+  expiresAt   DateTime?
+  
+  // Relations
+  codes       DiscountCode[]
+  
+  @@index([shopId, campaignId])
+  @@index([shopId, poolId])
+  @@index([shopId, status, expiresAt])
+}
+
+model Automation {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  
+  name        String
+  trigger     String   // abandoned_checkout|order_created|order_paid|fulfillment_update
+  enabled     Boolean  @default(true)
+  delayMinutes Int     @default(0)
+  template    String
+  conditions  Json?    // Additional trigger conditions
+  discountConfig Json? // Discount configuration for this automation
+  
+  @@index([shopId, trigger, enabled])
+  @@index([shopId, enabled])
+}
+
+model AbandonedCheckout {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  
+  checkoutToken String @unique
+  customerId   String?
+  email        String?
+  phone        String?
+  totalPrice   Decimal? @db.Decimal(10,2)
+  currency     String?
+  abandonedAt  DateTime
+  recoveredAt  DateTime?
+  abandonedCheckoutUrl String?
+  
+  @@index([shopId, checkoutToken])
+  @@index([shopId, customerId])
+  @@index([shopId, abandonedAt])
 }

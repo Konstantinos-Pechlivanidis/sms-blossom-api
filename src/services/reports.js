@@ -28,6 +28,11 @@ export async function getOverview({ shopId, from, to }) {
     where: { shopId, optedOut: true, unsubscribedAt: { gte: from, lt: to } },
   });
 
+  // Discount attribution metrics
+  const attributedOrders = await getAttributedOrders({ shopId, from, to });
+  const revenueByCampaign = await getRevenueByCampaign({ shopId, from, to });
+  const discountUtilization = await getDiscountUtilization({ shopId, from, to });
+
   return {
     sent,
     delivered,
@@ -36,6 +41,9 @@ export async function getOverview({ shopId, from, to }) {
     cost: 0, // Cost tracking not implemented yet
     optIns: optedIn,
     optOuts: optedOut,
+    attributedOrders,
+    revenueByCampaign,
+    discountUtilization,
   };
 }
 
@@ -211,4 +219,122 @@ export async function getMessagingTimeseries({ shopId, from, to }) {
     failed: Number(r.failed || 0),
     cost: 0, // Cost tracking not implemented yet
   }));
+}
+
+/** Get attributed orders (orders with discount codes from our campaigns) */
+export async function getAttributedOrders({ shopId, from, to }) {
+  const orders = await fetchOrdersFromEvents({ shopId, from, to });
+  
+  // Get all discount codes from our campaigns
+  const campaignDiscounts = await prisma.discount.findMany({
+    where: { shopId },
+    include: { campaign: true }
+  });
+  
+  const discountCodes = new Set(
+    campaignDiscounts.map(d => d.code.toUpperCase())
+  );
+  
+  let attributedCount = 0;
+  let totalRevenue = 0;
+  
+  for (const order of orders) {
+    const hasAttributedDiscount = order.discountCodes?.some(code => 
+      discountCodes.has(code.toUpperCase())
+    );
+    
+    if (hasAttributedDiscount) {
+      attributedCount++;
+      totalRevenue += order.totalPrice;
+    }
+  }
+  
+  return {
+    count: attributedCount,
+    revenue: totalRevenue,
+    percentage: orders.length > 0 ? (attributedCount / orders.length) * 100 : 0
+  };
+}
+
+/** Get revenue by campaign */
+export async function getRevenueByCampaign({ shopId, from, to }) {
+  const orders = await fetchOrdersFromEvents({ shopId, from, to });
+  const campaigns = await prisma.campaign.findMany({
+    where: { shopId },
+    include: { discount: true }
+  });
+  
+  const campaignRevenue = new Map();
+  
+  for (const campaign of campaigns) {
+    if (!campaign.discount) continue;
+    
+    const discountCode = campaign.discount.code.toUpperCase();
+    let revenue = 0;
+    let orderCount = 0;
+    
+    for (const order of orders) {
+      const hasDiscount = order.discountCodes?.some(code => 
+        code.toUpperCase() === discountCode
+      );
+      
+      if (hasDiscount) {
+        revenue += order.totalPrice;
+        orderCount++;
+      }
+    }
+    
+    if (revenue > 0) {
+      campaignRevenue.set(campaign.id, {
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        revenue,
+        orderCount,
+        discountCode: campaign.discount.code
+      });
+    }
+  }
+  
+  return Array.from(campaignRevenue.values())
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+/** Get discount utilization metrics */
+export async function getDiscountUtilization({ shopId, from, to }) {
+  // Get all discount code pools
+  const pools = await prisma.discountCodePool.findMany({
+    where: { shopId },
+    include: {
+      codes: {
+        where: {
+          OR: [
+            { status: 'used' },
+            { status: 'assigned' }
+          ]
+        }
+      }
+    }
+  });
+  
+  let totalCodes = 0;
+  let usedCodes = 0;
+  let reservedCodes = 0;
+  
+  for (const pool of pools) {
+    totalCodes += pool.totalCodes;
+    usedCodes += pool.usedCodes;
+    reservedCodes += pool.reservedCodes;
+  }
+  
+  const utilizationRate = totalCodes > 0 ? (usedCodes / totalCodes) * 100 : 0;
+  const reservationRate = totalCodes > 0 ? (reservedCodes / totalCodes) * 100 : 0;
+  
+  return {
+    totalCodes,
+    usedCodes,
+    reservedCodes,
+    availableCodes: totalCodes - usedCodes - reservedCodes,
+    utilizationRate,
+    reservationRate
+  };
 }

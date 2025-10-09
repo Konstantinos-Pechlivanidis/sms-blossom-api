@@ -932,6 +932,330 @@ paths:
                       type: string
                     example: ["SAVE20_2024", "SAVE20_NEW"]
 
+  /discounts/sync-from-shopify:
+    post:
+      tags: [Discounts]
+      summary: Sync discounts from Shopify
+      description: Import metadata of existing discounts from Shopify Admin API
+      operationId: syncDiscountsFromShopify
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: GraphQL query to filter discounts
+                  example: "status:active"
+      responses:
+        '200':
+          description: Sync results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+                    example: 5
+                  skipped:
+                    type: integer
+                    example: 2
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+  /discounts/{id}/pool/import:
+    post:
+      tags: [Discounts]
+      summary: Import discount codes to pool
+      description: Create DiscountCode entries from provided codes
+      operationId: importDiscountCodes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codes:
+                  type: array
+                  items:
+                    type: string
+                  example: ["SAVE20_001", "SAVE20_002", "SAVE20_003"]
+      responses:
+        '200':
+          description: Import results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+                    example: 3
+                  skipped:
+                    type: integer
+                    example: 0
+
+  /discounts/{id}/pool/generate:
+    post:
+      tags: [Discounts]
+      summary: Generate discount codes
+      description: Create discount codes via Shopify API and save to pool
+      operationId: generateDiscountCodes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  example: 100
+                prefix:
+                  type: string
+                  example: "SAVE20"
+                pattern:
+                  type: string
+                  example: "SAVE20_{NUMBER}"
+      responses:
+        '200':
+          description: Generation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: integer
+                    example: 100
+                  shopifyGids:
+                    type: array
+                    items:
+                      type: string
+
+  /discounts/{id}/pool/status:
+    get:
+      tags: [Discounts]
+      summary: Get pool status
+      description: Get discount code pool statistics
+      operationId: getPoolStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+      responses:
+        '200':
+          description: Pool status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 1000
+                  reserved:
+                    type: integer
+                    example: 150
+                  available:
+                    type: integer
+                    example: 800
+                  used:
+                    type: integer
+                    example: 50
+
+  /discounts/{id}/pool/reserve:
+    post:
+      tags: [Discounts]
+      summary: Reserve discount codes
+      description: Reserve N unique codes for a campaign
+      operationId: reserveDiscountCodes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                campaignId:
+                  type: string
+                  example: "camp_123"
+                count:
+                  type: integer
+                  minimum: 1
+                  example: 50
+      responses:
+        '200':
+          description: Reservation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservationId:
+                    type: string
+                    example: "res_123"
+                  reserved:
+                    type: integer
+                    example: 50
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  /discounts/{id}/pool/reservations/{reservationId}:
+    delete:
+      tags: [Discounts]
+      summary: Delete reservation
+      description: Cancel a discount code reservation
+      operationId: deleteReservation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reservation ID
+      responses:
+        '200':
+          description: Reservation cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cancelled:
+                    type: boolean
+                    example: true
+                  released:
+                    type: integer
+                    example: 50
+
+  /campaigns/{id}/prepare:
+    post:
+      tags: [Campaigns]
+      summary: Prepare campaign
+      description: Pre-assign discount codes and prebuild shortlinks
+      operationId: prepareCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+      responses:
+        '200':
+          description: Campaign prepared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prepared:
+                    type: boolean
+                    example: true
+                  codesAssigned:
+                    type: integer
+                    example: 100
+                  shortlinksBuilt:
+                    type: integer
+                    example: 100
+
   /templates:
     get:
       tags: [Templates]
@@ -2736,6 +3060,243 @@ components:
           nullable: true
           description: Message ID
           example: "inbound_123456"
+
+    # Discount Pooling Models
+    DiscountCodePool:
+      type: object
+      required: [id, shopId, discountId, name, totalCodes, reservedCodes, usedCodes, status]
+      properties:
+        id:
+          type: string
+          example: "pool_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        discountId:
+          type: string
+          example: "disc_123"
+        name:
+          type: string
+          example: "Black Friday Pool"
+        description:
+          type: string
+          nullable: true
+          example: "Pool for Black Friday campaign"
+        totalCodes:
+          type: integer
+          minimum: 0
+          example: 1000
+        reservedCodes:
+          type: integer
+          minimum: 0
+          example: 150
+        usedCodes:
+          type: integer
+          minimum: 0
+          example: 50
+        status:
+          type: string
+          enum: [active, inactive, exhausted]
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    DiscountCode:
+      type: object
+      required: [id, shopId, poolId, discountId, code, status]
+      properties:
+        id:
+          type: string
+          example: "code_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        poolId:
+          type: string
+          example: "pool_123"
+        discountId:
+          type: string
+          example: "disc_123"
+        code:
+          type: string
+          example: "SAVE20_001"
+        status:
+          type: string
+          enum: [available, reserved, used, expired]
+          example: "available"
+        reservedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        assignedTo:
+          type: string
+          nullable: true
+          example: "recipient_123"
+        shopifyGid:
+          type: string
+          nullable: true
+          example: "gid://shopify/DiscountCode/123456"
+        reservationId:
+          type: string
+          nullable: true
+          example: "res_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    DiscountCodeReservation:
+      type: object
+      required: [id, shopId, poolId, campaignId, quantity, status]
+      properties:
+        id:
+          type: string
+          example: "res_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        poolId:
+          type: string
+          example: "pool_123"
+        campaignId:
+          type: string
+          example: "camp_123"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 50
+        status:
+          type: string
+          enum: [active, used, expired, cancelled]
+          example: "active"
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-22T10:30:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    Automation:
+      type: object
+      required: [id, shopId, name, trigger, enabled, delayMinutes, template]
+      properties:
+        id:
+          type: string
+          example: "auto_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        name:
+          type: string
+          example: "Abandoned Checkout Recovery"
+        trigger:
+          type: string
+          enum: [abandoned_checkout, order_created, order_paid, fulfillment_update]
+          example: "abandoned_checkout"
+        enabled:
+          type: boolean
+          example: true
+        delayMinutes:
+          type: integer
+          minimum: 0
+          example: 60
+        template:
+          type: string
+          example: "Complete your order: {{ recovery_url }}"
+        conditions:
+          type: object
+          nullable: true
+          description: Additional trigger conditions
+        discountConfig:
+          type: object
+          nullable: true
+          description: Discount configuration for this automation
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    AbandonedCheckout:
+      type: object
+      required: [id, shopId, checkoutToken, abandonedAt]
+      properties:
+        id:
+          type: string
+          example: "abandoned_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        checkoutToken:
+          type: string
+          example: "checkout_token_123"
+        customerId:
+          type: string
+          nullable: true
+          example: "customer_123"
+        email:
+          type: string
+          nullable: true
+          example: "customer@example.com"
+        phone:
+          type: string
+          nullable: true
+          example: "+1234567890"
+        totalPrice:
+          type: number
+          nullable: true
+          example: 99.99
+        currency:
+          type: string
+          nullable: true
+          example: "USD"
+        abandonedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        recoveredAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T11:30:00Z"
+        abandonedCheckoutUrl:
+          type: string
+          nullable: true
+          example: "https://shop.myshopify.com/checkouts/123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
 
 webhooks:
   shopify_orders_create:

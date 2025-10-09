@@ -7,6 +7,7 @@ import { evaluateAutomation } from './processors/automations.js';
 import { processCampaignBatch } from './processors/campaigns.js';
 import { processDelivery } from './processors/delivery.js';
 import { processHousekeeping } from './processors/housekeeping.js';
+import { processDiscountReservation, processDiscountCodeAssignment, processDiscountCodeRelease } from './processors/discount-reservation.js';
 import { logger } from '../lib/logger.js';
 
 // Initialize workers
@@ -63,6 +64,26 @@ export async function startWorkers() {
       await processHousekeeping(job);
     });
     workers.push(housekeepingWorker);
+
+    // Discount reservation queue worker
+    const discountReservationWorker = createWorker('discount-reservation', async (job) => {
+      const { type } = job.payload;
+      switch (type) {
+        case 'reserve':
+          await processDiscountReservation(job);
+          break;
+        case 'assign':
+          await processDiscountCodeAssignment(job);
+          break;
+        case 'release':
+          await processDiscountCodeRelease(job);
+          break;
+        default:
+          logger.error({ type }, 'Unknown discount reservation job type');
+          throw new Error(`Unknown job type: ${type}`);
+      }
+    });
+    workers.push(discountReservationWorker);
 
     logger.info({ workerCount: workers.length }, 'All workers started successfully');
   } catch (error) {

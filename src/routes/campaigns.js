@@ -40,9 +40,13 @@ router.post('/', async (req, res) => {
   if (!shop) return res.status(400).json({ error: 'unknown_shop' });
 
   try {
+    const { discount, ...campaignData } = req.body;
+    
+    // Create campaign with discount configuration
     const result = await createCampaign({
       shopId: shop.id,
-      ...req.body,
+      ...campaignData,
+      discountConfig: discount || null,
     });
     res.json(result);
   } catch (err) {
@@ -130,6 +134,39 @@ router.get('/:id/estimate', async (req, res) => {
       shopId: shop.id,
       campaignId: req.params.id,
     });
+
+    // Get campaign with discount config
+    const campaign = await prisma.campaign.findFirst({
+      where: { id: req.params.id, shopId: shop.id }
+    });
+
+    if (campaign && campaign.discountConfig) {
+      const discountConfig = campaign.discountConfig;
+      
+      if (discountConfig.mode === 'pool' && discountConfig.discountId) {
+        // Check pool availability
+        const pool = await prisma.discountCodePool.findFirst({
+          where: {
+            discountId: discountConfig.discountId,
+            shopId: shop.id
+          }
+        });
+
+        if (pool) {
+          const availableCount = await prisma.discountCode.count({
+            where: {
+              poolId: pool.id,
+              status: 'available'
+            }
+          });
+
+          result.codesNeeded = result.estimatedRecipients;
+          result.poolAvailable = availableCount;
+          result.canProceed = availableCount >= result.estimatedRecipients;
+        }
+      }
+    }
+
     res.json(result);
   } catch (err) {
     return res.status(500).json({ error: 'estimate_campaign_error', details: err.message });
