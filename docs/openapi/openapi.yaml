@@ -1,0 +1,2837 @@
+openapi: 3.1.0
+info:
+  title: SMS Blossom API
+  version: 1.0.0
+  description: |
+    # SMS Blossom API
+    
+    A comprehensive REST API for Shopify SMS marketing automation. Built with Node.js/Express, this API provides:
+    
+    - **Campaign Management**: Create, schedule, and manage SMS campaigns
+    - **Customer Segmentation**: Advanced filtering and audience targeting
+    - **Template Engine**: LiquidJS-powered SMS templates with custom filters
+    - **Discount Integration**: Shopify discount code management
+    - **Webhook Processing**: Real-time Shopify event handling
+    - **GDPR Compliance**: Data protection and consent management
+    - **Analytics & Reporting**: Comprehensive metrics and insights
+    
+    ## Authentication
+    
+    The API uses JWT-based authentication with Shopify OAuth integration. All endpoints require proper authentication headers.
+    
+    ## Rate Limiting
+    
+    API requests are rate-limited per shop domain. See response headers for current limits.
+    
+    ## Webhooks
+    
+    The API supports webhooks for real-time event processing from Shopify and SMS providers.
+    
+  contact:
+    name: SMS Blossom Support
+    email: support@sms-blossom.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.sms-blossom.com
+    description: Production API
+  - url: https://sms-blossom-api.onrender.com
+    description: Staging API
+  - url: http://localhost:3000
+    description: Development API
+
+tags:
+  - name: Health
+    description: System health and monitoring endpoints
+  - name: Authentication
+    description: OAuth and JWT authentication
+  - name: Campaigns
+    description: SMS campaign management
+  - name: Discounts
+    description: Shopify discount code management
+  - name: Templates
+    description: SMS template management and validation
+  - name: Segments
+    description: Customer segmentation and filtering
+  - name: Reports
+    description: Analytics and reporting
+  - name: Settings
+    description: Shop configuration and automation rules
+  - name: Webhooks
+    description: Webhook endpoints for external integrations
+  - name: GDPR
+    description: GDPR compliance and data protection
+  - name: Public
+    description: Public App Proxy endpoints
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: System health check
+      description: Returns comprehensive system health status including database, Redis, and queue health
+      operationId: getHealth
+      responses:
+        '200':
+          description: System health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy system
+                  value:
+                    ok: true
+                    version: "1.0.0"
+                    db:
+                      ok: true
+                      latency_ms: 12
+                    redis:
+                      ok: true
+                      latency_ms: 8
+                    queues:
+                      ok: true
+                      workers: 2
+                    pii:
+                      phone_pct: 95
+                      email_pct: 98
+                    timestamp: "2024-01-15T10:30:00Z"
+                    request_id: "req_123456"
+        '500':
+          description: System unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      description: Kubernetes-style readiness check - returns 200 only if all critical systems are ready
+      operationId: getReadiness
+      responses:
+        '200':
+          description: System ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: true
+                  request_id:
+                    type: string
+                    example: "req_123456"
+        '503':
+          description: System not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: false
+                  db:
+                    type: boolean
+                    example: false
+                  redis:
+                    type: boolean
+                    example: true
+                  queues:
+                    type: boolean
+                    example: true
+                  request_id:
+                    type: string
+                    example: "req_123456"
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics
+      description: Exposes Prometheus-formatted metrics for monitoring
+      operationId: getMetrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP sms_send_attempts_total Total number of SMS send attempts
+                # TYPE sms_send_attempts_total counter
+                sms_send_attempts_total{provider="mitto",status="success"} 150
+                sms_send_attempts_total{provider="mitto",status="failed"} 5
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /queue/health:
+    get:
+      tags: [Health]
+      summary: Queue system health
+      description: Returns detailed queue system status including job counts and Redis connectivity
+      operationId: getQueueHealth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Queue health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueHealthResponse'
+
+  /auth/install:
+    get:
+      tags: [Authentication]
+      summary: Shopify OAuth installation
+      description: Initiates Shopify OAuth flow for app installation
+      operationId: installApp
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain (e.g., mystore.myshopify.com)
+        - name: hmac
+          in: query
+          schema:
+            type: string
+          description: HMAC signature for request validation
+        - name: timestamp
+          in: query
+          schema:
+            type: string
+          description: Request timestamp
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: OAuth state parameter
+      responses:
+        '302':
+          description: Redirect to Shopify OAuth
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/callback:
+    get:
+      tags: [Authentication]
+      summary: Shopify OAuth callback
+      description: Handles Shopify OAuth callback and completes app installation
+      operationId: handleOAuthCallback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Shopify
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: OAuth state parameter
+        - name: hmac
+          in: query
+          schema:
+            type: string
+          description: HMAC signature for request validation
+      responses:
+        '200':
+          description: OAuth successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  shop:
+                    type: string
+                    example: "mystore.myshopify.com"
+                  token:
+                    type: string
+                    example: "jwt_token_here"
+        '400':
+          description: OAuth failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns:
+    get:
+      tags: [Campaigns]
+      summary: List campaigns
+      description: Retrieve paginated list of campaigns for the authenticated shop
+      operationId: listCampaigns
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, scheduled, sending, paused, completed, failed]
+          description: Filter by campaign status
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Campaigns]
+      summary: Create campaign
+      description: Create a new SMS campaign
+      operationId: createCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+            examples:
+              basic_campaign:
+                summary: Basic campaign
+                value:
+                  name: "Black Friday Sale"
+                  template: "Get 20% off with code {{ discount_code }}! Shop now: {{ shop_url }}"
+                  segmentId: "seg_123"
+                  scheduleAt: "2024-11-24T00:00:00Z"
+              scheduled_campaign:
+                summary: Scheduled campaign
+                value:
+                  name: "Welcome Series"
+                  template: "Welcome {{ customer.first_name }}! Use code WELCOME10 for 10% off."
+                  segmentId: "seg_456"
+                  scheduleAt: "2024-01-20T09:00:00Z"
+                  utmJson:
+                    source: "sms"
+                    medium: "campaign"
+                    campaign: "welcome_series"
+      responses:
+        '201':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}:
+    get:
+      tags: [Campaigns]
+      summary: Get campaign
+      description: Retrieve a specific campaign by ID
+      operationId: getCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Campaigns]
+      summary: Update campaign
+      description: Update an existing campaign
+      operationId: updateCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignRequest'
+      responses:
+        '200':
+          description: Campaign updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Campaigns]
+      summary: Delete campaign
+      description: Delete a campaign (only if not sent)
+      operationId: deleteCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '204':
+          description: Campaign deleted successfully
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Cannot delete sent campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}/estimate:
+    post:
+      tags: [Campaigns]
+      summary: Estimate campaign
+      description: Estimate campaign recipients and cost before sending
+      operationId: estimateCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Campaign estimate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignEstimate'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}/test:
+    post:
+      tags: [Campaigns]
+      summary: Test send campaign
+      description: Send test SMS to a specific phone number
+      operationId: testSendCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  description: Phone number in E.164 format
+                  example: "+1234567890"
+                variables:
+                  type: object
+                  description: Template variables for testing
+                  example:
+                    customer:
+                      first_name: "John"
+                      last_name: "Doe"
+                    discount_code: "TEST20"
+      responses:
+        '200':
+          description: Test SMS sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  messageId:
+                    type: string
+                    example: "msg_123456"
+        '400':
+          description: Invalid phone number or campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}/send:
+    post:
+      tags: [Campaigns]
+      summary: Send campaign
+      description: Start sending a campaign to its audience
+      operationId: sendCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Campaign sending started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  campaignId:
+                    type: string
+                    example: "camp_123456"
+                  estimatedRecipients:
+                    type: integer
+                    example: 1500
+        '400':
+          description: Campaign cannot be sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /discounts:
+    get:
+      tags: [Discounts]
+      summary: List discounts
+      description: Retrieve paginated list of discount codes
+      operationId: listDiscounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, expired, scheduled]
+          description: Filter by discount status
+      responses:
+        '200':
+          description: List of discounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Discounts]
+      summary: Create discount
+      description: Create a new discount code in Shopify
+      operationId: createDiscount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiscountRequest'
+            examples:
+              percentage_discount:
+                summary: Percentage discount
+                value:
+                  code: "SAVE20"
+                  title: "20% Off Everything"
+                  type: "percentage"
+                  value: 20
+                  startsAt: "2024-01-01T00:00:00Z"
+                  endsAt: "2024-01-31T23:59:59Z"
+                  usageLimit: 1000
+                  oncePerCustomer: true
+              fixed_amount_discount:
+                summary: Fixed amount discount
+                value:
+                  code: "SAVE10"
+                  title: "$10 Off"
+                  type: "amount"
+                  value: 10
+                  currencyCode: "USD"
+                  startsAt: "2024-01-01T00:00:00Z"
+                  usageLimit: 500
+      responses:
+        '201':
+          description: Discount created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Discount code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /discounts/{id}:
+    get:
+      tags: [Discounts]
+      summary: Get discount
+      description: Retrieve a specific discount by ID
+      operationId: getDiscount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Discount details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '404':
+          description: Discount not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Discounts]
+      summary: Update discount
+      description: Update an existing discount
+      operationId: updateDiscount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDiscountRequest'
+      responses:
+        '200':
+          description: Discount updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '404':
+          description: Discount not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Discounts]
+      summary: Delete discount
+      description: Delete a discount code
+      operationId: deleteDiscount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Discount ID
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '204':
+          description: Discount deleted successfully
+        '404':
+          description: Discount not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /discounts/conflicts:
+    post:
+      tags: [Discounts]
+      summary: Check discount conflicts
+      description: Check for potential conflicts with existing discount codes
+      operationId: checkDiscountConflicts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Discount code to check
+                  example: "SAVE20"
+                excludeId:
+                  type: string
+                  description: Discount ID to exclude from conflict check
+      responses:
+        '200':
+          description: Conflict check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasConflicts:
+                    type: boolean
+                    example: false
+                  conflicts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscountConflict'
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    example: ["SAVE20_2024", "SAVE20_NEW"]
+
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List templates
+      description: Retrieve SMS templates for the shop
+      operationId: listTemplates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: trigger
+          in: query
+          schema:
+            type: string
+            enum: [abandoned_checkout, order_created, order_paid, fulfillment_update, welcome, back_in_stock]
+          description: Filter by trigger type
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Templates]
+      summary: Create template
+      description: Create a new SMS template
+      operationId: createTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+            examples:
+              abandoned_checkout:
+                summary: Abandoned checkout template
+                value:
+                  name: "Abandoned Checkout Recovery"
+                  trigger: "abandoned_checkout"
+                  body: "Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}"
+                  variables:
+                    customer:
+                      first_name: "John"
+                    recovery_url: "https://shop.com/checkout"
+              order_confirmation:
+                summary: Order confirmation template
+                value:
+                  name: "Order Confirmation"
+                  trigger: "order_created"
+                  body: "Order {{ order.number }} confirmed! Total: {{ order.total | money }}"
+                  variables:
+                    order:
+                      number: "1001"
+                      total: 99.99
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /templates/preview:
+    post:
+      tags: [Templates]
+      summary: Preview template
+      description: Preview how a template will render with sample data
+      operationId: previewTemplate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: Template body with Liquid syntax
+                  example: "Hi {{ customer.first_name }}, your order {{ order.number }} is ready!"
+                variables:
+                  type: object
+                  description: Sample variables for rendering
+                  example:
+                    customer:
+                      first_name: "John"
+                    order:
+                      number: "1001"
+                locale:
+                  type: string
+                  default: "en-US"
+                  description: Locale for formatting
+      responses:
+        '200':
+          description: Template preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text:
+                    type: string
+                    example: "Hi John, your order 1001 is ready!"
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Template will create 1 SMS parts"]
+                  segments:
+                    $ref: '#/components/schemas/SMSSegments'
+
+  /templates/validate:
+    post:
+      tags: [Templates]
+      summary: Validate template
+      description: Validate template syntax and required variables
+      operationId: validateTemplate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: Template body to validate
+                trigger:
+                  type: string
+                  enum: [abandoned_checkout, order_created, order_paid, fulfillment_update, welcome, back_in_stock]
+                  description: Trigger type for validation
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example: []
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Template will create 1 SMS parts"]
+
+  /templates/variables/{trigger}:
+    get:
+      tags: [Templates]
+      summary: Get template variables
+      description: Get available variables for a specific trigger type
+      operationId: getTemplateVariables
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: trigger
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [abandoned_checkout, order_created, order_paid, fulfillment_update, welcome, back_in_stock]
+          description: Trigger type
+      responses:
+        '200':
+          description: Available variables
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  required:
+                    type: array
+                    items:
+                      type: string
+                    example: ["recovery_url", "checkout_id"]
+                  optional:
+                    type: array
+                    items:
+                      type: string
+                    example: ["customer_name", "cart_total", "currency", "shop_name"]
+                  description:
+                    type: string
+                    example: "Abandoned checkout recovery"
+
+  /segments:
+    get:
+      tags: [Segments]
+      summary: List segments
+      description: Retrieve customer segments
+      operationId: listSegments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of segments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Segments]
+      summary: Create segment
+      description: Create a new customer segment
+      operationId: createSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSegmentRequest'
+            examples:
+              vip_customers:
+                summary: VIP customers segment
+                value:
+                  name: "VIP Customers"
+                  filterJson:
+                    and:
+                      - consent: "opted_in"
+                      - tags:
+                          has: "vip"
+              high_value:
+                summary: High value customers
+                value:
+                  name: "High Value Customers"
+                  filterJson:
+                    and:
+                      - consent: "opted_in"
+                      - total_spent:
+                          gte: 500
+      responses:
+        '201':
+          description: Segment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /segments/preview:
+    post:
+      tags: [Segments]
+      summary: Preview segment
+      description: Preview segment filter and get estimated count
+      operationId: previewSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filterJson:
+                  type: object
+                  description: Segment filter DSL
+                  example:
+                    and:
+                      - consent: "opted_in"
+                      - tags:
+                          has: "vip"
+      responses:
+        '200':
+          description: Segment preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estimatedCount:
+                    type: integer
+                    example: 150
+                  filter:
+                    type: object
+                    description: Parsed filter object
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    example: []
+
+  /reports/overview:
+    get:
+      tags: [Reports]
+      summary: Overview report
+      description: Get high-level analytics overview
+      operationId: getOverviewReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 30d
+          description: Reporting period
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date (overrides period)
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date (overrides period)
+      responses:
+        '200':
+          description: Overview report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverviewReport'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/messaging:
+    get:
+      tags: [Reports]
+      summary: Messaging report
+      description: Get detailed messaging analytics
+      operationId: getMessagingReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 30d
+          description: Reporting period
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+          description: Group results by time period
+      responses:
+        '200':
+          description: Messaging report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagingReport'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get shop settings
+      description: Retrieve shop configuration and automation settings
+      operationId: getSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Shop settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopSettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Settings]
+      summary: Update shop settings
+      description: Update shop configuration and automation settings
+      operationId: updateSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+            examples:
+              basic_settings:
+                summary: Basic settings
+                value:
+                  timezone: "America/New_York"
+                  locale: "en-US"
+                  automations:
+                    abandoned_checkout:
+                      enabled: true
+                      delay_minutes: 60
+                      template: "Complete your order: {{ recovery_url }}"
+                    welcome:
+                      enabled: true
+                      delay_minutes: 5
+                      template: "Welcome {{ customer.first_name }}!"
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopSettings'
+        '400':
+          description: Invalid settings data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/shopify/orders/create:
+    post:
+      tags: [Webhooks]
+      summary: Shopify orders/create webhook
+      description: Handle Shopify order creation webhook
+      operationId: handleOrdersCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify order webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  /webhooks/shopify/orders/paid:
+    post:
+      tags: [Webhooks]
+      summary: Shopify orders/paid webhook
+      description: Handle Shopify order payment webhook
+      operationId: handleOrdersPaid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify order webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  /webhooks/shopify/checkouts/create:
+    post:
+      tags: [Webhooks]
+      summary: Shopify checkouts/create webhook
+      description: Handle Shopify checkout creation webhook
+      operationId: handleCheckoutsCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify checkout webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  /webhooks/shopify/checkouts/update:
+    post:
+      tags: [Webhooks]
+      summary: Shopify checkouts/update webhook
+      description: Handle Shopify checkout update webhook (abandoned checkout detection)
+      operationId: handleCheckoutsUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify checkout webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  /webhooks/mitto/dlr:
+    post:
+      tags: [Webhooks]
+      summary: Mitto DLR webhook
+      description: Handle Mitto delivery receipt webhook
+      operationId: handleMittoDLR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MittoDLRPayload'
+      responses:
+        '200':
+          description: DLR processed successfully
+        '400':
+          description: Invalid DLR payload
+        '401':
+          description: Invalid HMAC signature
+
+  /webhooks/mitto/inbound:
+    post:
+      tags: [Webhooks]
+      summary: Mitto inbound webhook
+      description: Handle Mitto inbound SMS webhook
+      operationId: handleMittoInbound
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MittoInboundPayload'
+      responses:
+        '200':
+          description: Inbound message processed successfully
+        '400':
+          description: Invalid inbound payload
+        '401':
+          description: Invalid HMAC signature
+
+  /public/unsubscribe:
+    post:
+      tags: [Public]
+      summary: Public unsubscribe
+      description: Handle public unsubscribe requests from App Proxy
+      operationId: publicUnsubscribe
+      security:
+        - appProxyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  description: Phone number to unsubscribe
+                  example: "+1234567890"
+                shop:
+                  type: string
+                  description: Shop domain
+                  example: "mystore.myshopify.com"
+      responses:
+        '200':
+          description: Unsubscribe processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "You have been unsubscribed from SMS messages"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/back-in-stock:
+    post:
+      tags: [Public]
+      summary: Back in stock notification
+      description: Handle back in stock notification requests from App Proxy
+      operationId: publicBackInStock
+      security:
+        - appProxyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  description: Phone number for notification
+                  example: "+1234567890"
+                shop:
+                  type: string
+                  description: Shop domain
+                  example: "mystore.myshopify.com"
+                productId:
+                  type: string
+                  description: Shopify product ID
+                  example: "123456789"
+                variantId:
+                  type: string
+                  description: Shopify variant ID
+                  example: "987654321"
+      responses:
+        '200':
+          description: Back in stock request processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "You will be notified when this product is back in stock"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from OAuth flow
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session cookie for authenticated requests
+    appProxyAuth:
+      type: apiKey
+      in: header
+      name: X-Shopify-Hmac-Sha256
+      description: HMAC signature for App Proxy requests
+
+  schemas:
+    # Core Response Types
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "validation_error"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request data"
+        details:
+          type: object
+          description: Additional error details
+        traceId:
+          type: string
+          description: Request trace ID for debugging
+          example: "req_123456"
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            limit:
+              type: integer
+              minimum: 1
+            total:
+              type: integer
+              minimum: 0
+            pages:
+              type: integer
+              minimum: 0
+
+    # Health & System
+    HealthResponse:
+      type: object
+      required: [ok, version, db, redis, queues, pii, timestamp, request_id]
+      properties:
+        ok:
+          type: boolean
+          description: Overall system health
+          example: true
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
+        db:
+          type: object
+          required: [ok, latency_ms]
+          properties:
+            ok:
+              type: boolean
+              example: true
+            latency_ms:
+              type: integer
+              minimum: 0
+              example: 12
+        redis:
+          type: object
+          required: [ok, latency_ms]
+          properties:
+            ok:
+              type: boolean
+              example: true
+            latency_ms:
+              type: integer
+              minimum: 0
+              example: 8
+        queues:
+          type: object
+          required: [ok, workers]
+          properties:
+            ok:
+              type: boolean
+              example: true
+            workers:
+              type: integer
+              minimum: 0
+              example: 2
+        pii:
+          type: object
+          properties:
+            phone_pct:
+              type: integer
+              minimum: 0
+              maximum: 100
+              nullable: true
+              example: 95
+            email_pct:
+              type: integer
+              minimum: 0
+              maximum: 100
+              nullable: true
+              example: 98
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        request_id:
+          type: string
+          example: "req_123456"
+
+    QueueHealthResponse:
+      type: object
+      required: [redis, queues, dlq, timestamp, request_id]
+      properties:
+        redis:
+          type: boolean
+          example: true
+        queues:
+          type: object
+          properties:
+            events:
+              $ref: '#/components/schemas/QueueStatus'
+            automations:
+              $ref: '#/components/schemas/QueueStatus'
+            campaigns:
+              $ref: '#/components/schemas/QueueStatus'
+            delivery:
+              $ref: '#/components/schemas/QueueStatus'
+            housekeeping:
+              $ref: '#/components/schemas/QueueStatus'
+        dlq:
+          type: object
+          properties:
+            events_dead:
+              type: integer
+              minimum: 0
+              example: 0
+            delivery_dead:
+              type: integer
+              minimum: 0
+              example: 0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        request_id:
+          type: string
+          example: "req_123456"
+
+    QueueStatus:
+      type: object
+      properties:
+        waiting:
+          type: integer
+          minimum: 0
+          example: 5
+        active:
+          type: integer
+          minimum: 0
+          example: 2
+        completed:
+          type: integer
+          minimum: 0
+          example: 150
+        failed:
+          type: integer
+          minimum: 0
+          example: 3
+        delayed:
+          type: integer
+          minimum: 0
+          example: 1
+        paused:
+          type: integer
+          minimum: 0
+          example: 0
+        drained:
+          type: integer
+          minimum: 0
+          example: 0
+
+    # Campaign Models
+    Campaign:
+      type: object
+      required: [id, name, status, createdAt, updatedAt, shopId]
+      properties:
+        id:
+          type: string
+          description: Campaign ID
+          example: "camp_123456"
+        name:
+          type: string
+          description: Campaign name
+          example: "Black Friday Sale"
+        status:
+          type: string
+          enum: [draft, scheduled, sending, paused, completed, failed]
+          example: "draft"
+        template:
+          type: string
+          nullable: true
+          description: Template content
+          example: "Get 20% off with code {{ discount_code }}!"
+        segmentId:
+          type: string
+          nullable: true
+          description: Target segment ID
+          example: "seg_123"
+        templateId:
+          type: string
+          nullable: true
+          description: Template ID
+          example: "tpl_123"
+        templateKey:
+          type: string
+          nullable: true
+          description: Template key
+          example: "welcome"
+        scheduleAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Scheduled send time
+          example: "2024-11-24T00:00:00Z"
+        utmJson:
+          type: object
+          nullable: true
+          description: UTM tracking parameters
+          example:
+            source: "sms"
+            medium: "campaign"
+            campaign: "black_friday"
+        batchSize:
+          type: integer
+          nullable: true
+          description: Batch size for sending
+          example: 100
+        bodyText:
+          type: string
+          nullable: true
+          description: SMS body text
+          example: "Get 20% off with code SAVE20!"
+        discountId:
+          type: string
+          nullable: true
+          description: Associated discount ID
+          example: "disc_123"
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    CreateCampaignRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Black Friday Sale"
+        template:
+          type: string
+          nullable: true
+          example: "Get 20% off with code {{ discount_code }}!"
+        segmentId:
+          type: string
+          nullable: true
+          example: "seg_123"
+        templateId:
+          type: string
+          nullable: true
+          example: "tpl_123"
+        templateKey:
+          type: string
+          nullable: true
+          example: "welcome"
+        scheduleAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-11-24T00:00:00Z"
+        utmJson:
+          type: object
+          nullable: true
+          example:
+            source: "sms"
+            medium: "campaign"
+            campaign: "black_friday"
+        batchSize:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          nullable: true
+          example: 100
+        bodyText:
+          type: string
+          nullable: true
+          example: "Get 20% off with code SAVE20!"
+        discountId:
+          type: string
+          nullable: true
+          example: "disc_123"
+
+    UpdateCampaignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Updated Campaign Name"
+        template:
+          type: string
+          nullable: true
+          example: "Updated template content"
+        segmentId:
+          type: string
+          nullable: true
+          example: "seg_456"
+        scheduleAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-12-01T00:00:00Z"
+        status:
+          type: string
+          enum: [draft, scheduled, sending, paused, completed, failed]
+          example: "scheduled"
+
+    CampaignListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Campaign'
+
+    CampaignEstimate:
+      type: object
+      required: [estimatedRecipients, estimatedCost, segmentsUsed]
+      properties:
+        estimatedRecipients:
+          type: integer
+          minimum: 0
+          example: 1500
+        estimatedCost:
+          type: number
+          minimum: 0
+          example: 45.00
+        segmentsUsed:
+          type: integer
+          minimum: 0
+          example: 1
+        warnings:
+          type: array
+          items:
+            type: string
+          example: ["Template will create 2 SMS parts"]
+
+    # Discount Models
+    Discount:
+      type: object
+      required: [id, code, type, createdAt, updatedAt, shopId]
+      properties:
+        id:
+          type: string
+          description: Discount ID
+          example: "disc_123456"
+        code:
+          type: string
+          description: Discount code
+          example: "SAVE20"
+        title:
+          type: string
+          nullable: true
+          description: Discount title
+          example: "20% Off Everything"
+        type:
+          type: string
+          enum: [percentage, amount, shipping]
+          description: Discount type
+          example: "percentage"
+        value:
+          type: number
+          nullable: true
+          description: Discount value
+          example: 20.00
+        currencyCode:
+          type: string
+          nullable: true
+          description: Currency code
+          example: "USD"
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Start date
+          example: "2024-01-01T00:00:00Z"
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date
+          example: "2024-01-31T23:59:59Z"
+        usageLimit:
+          type: integer
+          nullable: true
+          description: Usage limit
+          example: 1000
+        oncePerCustomer:
+          type: boolean
+          nullable: true
+          description: One use per customer
+          example: true
+        applyUrl:
+          type: string
+          nullable: true
+          description: Apply URL
+          example: "https://shop.com/discount/SAVE20"
+        providerId:
+          type: string
+          nullable: true
+          description: Shopify discount ID
+          example: "gid://shopify/DiscountCodeNode/123456"
+        status:
+          type: string
+          nullable: true
+          enum: [active, expired, scheduled]
+          description: Discount status
+          example: "active"
+        utmJson:
+          type: object
+          nullable: true
+          description: UTM parameters
+          example:
+            source: "sms"
+            medium: "campaign"
+            campaign: "black_friday"
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    CreateDiscountRequest:
+      type: object
+      required: [code, type]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: "^[A-Z0-9_-]+$"
+          example: "SAVE20"
+        title:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: "20% Off Everything"
+        type:
+          type: string
+          enum: [percentage, amount, shipping]
+          example: "percentage"
+        value:
+          type: number
+          minimum: 0
+          nullable: true
+          example: 20.00
+        currencyCode:
+          type: string
+          nullable: true
+          example: "USD"
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-01T00:00:00Z"
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-31T23:59:59Z"
+        usageLimit:
+          type: integer
+          minimum: 1
+          nullable: true
+          example: 1000
+        oncePerCustomer:
+          type: boolean
+          nullable: true
+          example: true
+        utmJson:
+          type: object
+          nullable: true
+          example:
+            source: "sms"
+            medium: "campaign"
+            campaign: "black_friday"
+
+    UpdateDiscountRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: "Updated Discount Title"
+        value:
+          type: number
+          minimum: 0
+          nullable: true
+          example: 25.00
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-02-01T00:00:00Z"
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-02-28T23:59:59Z"
+        usageLimit:
+          type: integer
+          minimum: 1
+          nullable: true
+          example: 2000
+        oncePerCustomer:
+          type: boolean
+          nullable: true
+          example: false
+
+    DiscountListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Discount'
+
+    DiscountConflict:
+      type: object
+      required: [id, code, type, conflictType]
+      properties:
+        id:
+          type: string
+          example: "disc_123"
+        code:
+          type: string
+          example: "SAVE20"
+        type:
+          type: string
+          example: "percentage"
+        conflictType:
+          type: string
+          enum: [exact_match, similar_code, overlapping_period]
+          example: "exact_match"
+        message:
+          type: string
+          example: "Discount code already exists"
+
+    # Template Models
+    Template:
+      type: object
+      required: [id, name, trigger, body, createdAt, updatedAt, shopId]
+      properties:
+        id:
+          type: string
+          description: Template ID
+          example: "tpl_123456"
+        name:
+          type: string
+          description: Template name
+          example: "Abandoned Checkout Recovery"
+        trigger:
+          type: string
+          enum: [abandoned_checkout, order_created, order_paid, fulfillment_update, welcome, back_in_stock]
+          description: Trigger type
+          example: "abandoned_checkout"
+        body:
+          type: string
+          description: Template body with Liquid syntax
+          example: "Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}"
+        variables:
+          type: object
+          nullable: true
+          description: Template variables
+          example:
+            customer:
+              first_name: "John"
+            recovery_url: "https://shop.com/checkout"
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    CreateTemplateRequest:
+      type: object
+      required: [name, trigger, body]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Abandoned Checkout Recovery"
+        trigger:
+          type: string
+          enum: [abandoned_checkout, order_created, order_paid, fulfillment_update, welcome, back_in_stock]
+          example: "abandoned_checkout"
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1600
+          example: "Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}"
+        variables:
+          type: object
+          nullable: true
+          example:
+            customer:
+              first_name: "John"
+            recovery_url: "https://shop.com/checkout"
+
+    TemplateListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Template'
+
+    SMSSegments:
+      type: object
+      required: [parts, characters, encoding]
+      properties:
+        parts:
+          type: integer
+          minimum: 1
+          description: Number of SMS parts
+          example: 1
+        characters:
+          type: integer
+          minimum: 0
+          description: Character count
+          example: 120
+        encoding:
+          type: string
+          enum: [GSM, Unicode]
+          description: Character encoding
+          example: "GSM"
+
+    # Segment Models
+    Segment:
+      type: object
+      required: [id, name, filterJson, createdAt, updatedAt, shopId]
+      properties:
+        id:
+          type: string
+          description: Segment ID
+          example: "seg_123456"
+        name:
+          type: string
+          description: Segment name
+          example: "VIP Customers"
+        filterJson:
+          type: object
+          description: Segment filter DSL
+          example:
+            and:
+              - consent: "opted_in"
+              - tags:
+                  has: "vip"
+        lastMaterializedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last materialization time
+          example: "2024-01-15T10:30:00Z"
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    CreateSegmentRequest:
+      type: object
+      required: [name, filterJson]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "VIP Customers"
+        filterJson:
+          type: object
+          description: Segment filter DSL
+          example:
+            and:
+              - consent: "opted_in"
+              - tags:
+                  has: "vip"
+
+    SegmentListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Segment'
+
+    # Report Models
+    OverviewReport:
+      type: object
+      required: [period, totalMessages, deliveredMessages, failedMessages, optOuts, revenue]
+      properties:
+        period:
+          type: object
+          required: [start, end]
+          properties:
+            start:
+              type: string
+              format: date
+              example: "2024-01-01"
+            end:
+              type: string
+              format: date
+              example: "2024-01-31"
+        totalMessages:
+          type: integer
+          minimum: 0
+          example: 15000
+        deliveredMessages:
+          type: integer
+          minimum: 0
+          example: 14250
+        failedMessages:
+          type: integer
+          minimum: 0
+          example: 750
+        optOuts:
+          type: integer
+          minimum: 0
+          example: 25
+        revenue:
+          type: number
+          minimum: 0
+          example: 45000.00
+        averageDeliveryTime:
+          type: number
+          minimum: 0
+          example: 2.5
+        topCampaigns:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "camp_123"
+              name:
+                type: string
+                example: "Black Friday Sale"
+              messages:
+                type: integer
+                example: 5000
+              revenue:
+                type: number
+                example: 15000.00
+
+    MessagingReport:
+      type: object
+      required: [period, timeseries, summary]
+      properties:
+        period:
+          type: object
+          required: [start, end]
+          properties:
+            start:
+              type: string
+              format: date
+              example: "2024-01-01"
+            end:
+              type: string
+              format: date
+              example: "2024-01-31"
+        timeseries:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                example: "2024-01-01"
+              sent:
+                type: integer
+                minimum: 0
+                example: 500
+              delivered:
+                type: integer
+                minimum: 0
+                example: 475
+              failed:
+                type: integer
+                minimum: 0
+                example: 25
+              optOuts:
+                type: integer
+                minimum: 0
+                example: 2
+        summary:
+          type: object
+          properties:
+            totalSent:
+              type: integer
+              example: 15000
+            totalDelivered:
+              type: integer
+              example: 14250
+            totalFailed:
+              type: integer
+              example: 750
+            totalOptOuts:
+              type: integer
+              example: 25
+            deliveryRate:
+              type: number
+              minimum: 0
+              maximum: 100
+              example: 95.0
+            optOutRate:
+              type: number
+              minimum: 0
+              maximum: 100
+              example: 0.17
+
+    # Settings Models
+    ShopSettings:
+      type: object
+      required: [shopId, timezone, locale, automations, createdAt, updatedAt]
+      properties:
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
+        timezone:
+          type: string
+          description: Shop timezone
+          example: "America/New_York"
+        locale:
+          type: string
+          description: Shop locale
+          example: "en-US"
+        automations:
+          type: object
+          description: Automation settings
+          properties:
+            abandoned_checkout:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                delay_minutes:
+                  type: integer
+                  minimum: 1
+                  example: 60
+                template:
+                  type: string
+                  example: "Complete your order: {{ recovery_url }}"
+            welcome:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                delay_minutes:
+                  type: integer
+                  minimum: 1
+                  example: 5
+                template:
+                  type: string
+                  example: "Welcome {{ customer.first_name }}!"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        timezone:
+          type: string
+          example: "America/New_York"
+        locale:
+          type: string
+          example: "en-US"
+        automations:
+          type: object
+          properties:
+            abandoned_checkout:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                delay_minutes:
+                  type: integer
+                  minimum: 1
+                  example: 60
+                template:
+                  type: string
+                  example: "Complete your order: {{ recovery_url }}"
+            welcome:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                delay_minutes:
+                  type: integer
+                  minimum: 1
+                  example: 5
+                template:
+                  type: string
+                  example: "Welcome {{ customer.first_name }}!"
+
+    # Webhook Models
+    MittoDLRPayload:
+      type: object
+      required: [messageId, status, timestamp]
+      properties:
+        messageId:
+          type: string
+          description: Message ID
+          example: "msg_123456"
+        status:
+          type: string
+          enum: [delivered, failed, pending]
+          description: Delivery status
+          example: "delivered"
+        timestamp:
+          type: string
+          format: date-time
+          description: Status timestamp
+          example: "2024-01-15T10:30:00Z"
+        errorCode:
+          type: string
+          nullable: true
+          description: Error code if failed
+          example: "INVALID_NUMBER"
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if failed
+          example: "Invalid phone number format"
+
+    MittoInboundPayload:
+      type: object
+      required: [phone, message, timestamp]
+      properties:
+        phone:
+          type: string
+          description: Sender phone number
+          example: "+1234567890"
+        message:
+          type: string
+          description: Inbound message text
+          example: "STOP"
+        timestamp:
+          type: string
+          format: date-time
+          description: Message timestamp
+          example: "2024-01-15T10:30:00Z"
+        messageId:
+          type: string
+          nullable: true
+          description: Message ID
+          example: "inbound_123456"
+
+webhooks:
+  shopify_orders_create:
+    post:
+      tags: [Webhooks]
+      summary: Shopify orders/create webhook
+      description: Triggered when a new order is created in Shopify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify order webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  shopify_orders_paid:
+    post:
+      tags: [Webhooks]
+      summary: Shopify orders/paid webhook
+      description: Triggered when an order is paid in Shopify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify order webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  shopify_checkouts_update:
+    post:
+      tags: [Webhooks]
+      summary: Shopify checkouts/update webhook
+      description: Triggered when a checkout is updated (abandoned checkout detection)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Shopify checkout webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+        '400':
+          description: Invalid webhook payload
+        '401':
+          description: Invalid HMAC signature
+
+  mitto_dlr:
+    post:
+      tags: [Webhooks]
+      summary: Mitto DLR webhook
+      description: Triggered when SMS delivery status changes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MittoDLRPayload'
+      responses:
+        '200':
+          description: DLR processed successfully
+        '400':
+          description: Invalid DLR payload
+        '401':
+          description: Invalid HMAC signature
+
+  mitto_inbound:
+    post:
+      tags: [Webhooks]
+      summary: Mitto inbound webhook
+      description: Triggered when an inbound SMS is received
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MittoInboundPayload'
+      responses:
+        '200':
+          description: Inbound message processed successfully
+        '400':
+          description: Invalid inbound payload
+        '401':
+          description: Invalid HMAC signature

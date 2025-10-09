@@ -1,0 +1,1148 @@
+{
+  "info": {
+    "name": "SMS Blossom API",
+    "description": "Complete API collection for SMS Blossom - Shopify SMS marketing automation",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.sms-blossom.com",
+      "type": "string"
+    },
+    {
+      "key": "shop_domain",
+      "value": "mystore.myshopify.com",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health", "ready"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Queue Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/queue/health",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "OAuth Install",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/install?shop={{shop_domain}}&hmac=test_hmac&timestamp={{$timestamp}}&state=test_state",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "install"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "hmac",
+                  "value": "test_hmac"
+                },
+                {
+                  "key": "timestamp",
+                  "value": "{{$timestamp}}"
+                },
+                {
+                  "key": "state",
+                  "value": "test_state"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OAuth Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/callback?code=test_code&shop={{shop_domain}}&state=test_state&hmac=test_hmac",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "callback"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "test_code"
+                },
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "state",
+                  "value": "test_state"
+                },
+                {
+                  "key": "hmac",
+                  "value": "test_hmac"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Campaigns",
+      "item": [
+        {
+          "name": "List Campaigns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns?shop={{shop_domain}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Black Friday Sale\",\n  \"template\": \"Get 20% off with code {{ discount_code }}! Shop now: {{ shop_url }}\",\n  \"segmentId\": \"seg_123\",\n  \"scheduleAt\": \"2024-11-24T00:00:00Z\",\n  \"utmJson\": {\n    \"source\": \"sms\",\n    \"medium\": \"campaign\",\n    \"campaign\": \"black_friday\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Campaign",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Campaign",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Campaign Name\",\n  \"scheduleAt\": \"2024-12-01T00:00:00Z\",\n  \"status\": \"scheduled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Campaign",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Estimate Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456/estimate?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456", "estimate"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Send Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"variables\": {\n    \"customer\": {\n      \"first_name\": \"John\",\n      \"last_name\": \"Doe\"\n    },\n    \"discount_code\": \"TEST20\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456/test?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456", "test"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/campaigns/camp_123456/send?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["campaigns", "camp_123456", "send"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Discounts",
+      "item": [
+        {
+          "name": "List Discounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts?shop={{shop_domain}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["discounts"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Discount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE20\",\n  \"title\": \"20% Off Everything\",\n  \"type\": \"percentage\",\n  \"value\": 20,\n  \"startsAt\": \"2024-01-01T00:00:00Z\",\n  \"endsAt\": \"2024-01-31T23:59:59Z\",\n  \"usageLimit\": 1000,\n  \"oncePerCustomer\": true,\n  \"utmJson\": {\n    \"source\": \"sms\",\n    \"medium\": \"campaign\",\n    \"campaign\": \"black_friday\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Discount",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts/disc_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "disc_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Discount",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Discount Title\",\n  \"value\": 25,\n  \"startsAt\": \"2024-02-01T00:00:00Z\",\n  \"endsAt\": \"2024-02-28T23:59:59Z\",\n  \"usageLimit\": 2000,\n  \"oncePerCustomer\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts/disc_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "disc_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Discount",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/discounts/disc_123456?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "disc_123456"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Discount Conflicts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE20\",\n  \"excludeId\": \"disc_123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discounts/conflicts?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["discounts", "conflicts"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/templates?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Abandoned Checkout Recovery\",\n  \"trigger\": \"abandoned_checkout\",\n  \"body\": \"Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}\",\n  \"variables\": {\n    \"customer\": {\n      \"first_name\": \"John\"\n    },\n    \"recovery_url\": \"https://shop.com/checkout\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["templates"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hi {{ customer.first_name }}, your order {{ order.number }} is ready!\",\n  \"variables\": {\n    \"customer\": {\n      \"first_name\": \"John\"\n    },\n    \"order\": {\n      \"number\": \"1001\"\n    }\n  },\n  \"locale\": \"en-US\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/preview",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "preview"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hi {{ customer.first_name }}, complete your order: {{ recovery_url }}\",\n  \"trigger\": \"abandoned_checkout\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/validate",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "validate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/templates/variables/abandoned_checkout",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "variables", "abandoned_checkout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Segments",
+      "item": [
+        {
+          "name": "List Segments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/segments?shop={{shop_domain}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["segments"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Segment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VIP Customers\",\n  \"filterJson\": {\n    \"and\": [\n      {\n        \"consent\": \"opted_in\"\n      },\n      {\n        \"tags\": {\n          \"has\": \"vip\"\n        }\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/segments?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["segments"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Segment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filterJson\": {\n    \"and\": [\n      {\n        \"consent\": \"opted_in\"\n      },\n      {\n        \"tags\": {\n          \"has\": \"vip\"\n        }\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/segments/preview?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["segments", "preview"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Overview Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/overview?shop={{shop_domain}}&period=30d",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "overview"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "period",
+                  "value": "30d"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Messaging Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/messaging?shop={{shop_domain}}&period=30d&groupBy=day",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "messaging"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                },
+                {
+                  "key": "period",
+                  "value": "30d"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "day"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["settings"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"America/New_York\",\n  \"locale\": \"en-US\",\n  \"automations\": {\n    \"abandoned_checkout\": {\n      \"enabled\": true,\n      \"delay_minutes\": 60,\n      \"template\": \"Complete your order: {{ recovery_url }}\"\n    },\n    \"welcome\": {\n      \"enabled\": true,\n      \"delay_minutes\": 5,\n      \"template\": \"Welcome {{ customer.first_name }}!\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings?shop={{shop_domain}}",
+              "host": ["{{base_url}}"],
+              "path": ["settings"],
+              "query": [
+                {
+                  "key": "shop",
+                  "value": "{{shop_domain}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Shopify Orders Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Hmac-Sha256",
+                "value": "test_hmac",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Shop-Domain",
+                "value": "{{shop_domain}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 123456789,\n  \"email\": \"customer@example.com\",\n  \"created_at\": \"2024-01-15T10:30:00Z\",\n  \"updated_at\": \"2024-01-15T10:30:00Z\",\n  \"number\": 1001,\n  \"note\": null,\n  \"token\": \"abc123\",\n  \"gateway\": \"shopify_payments\",\n  \"test\": false,\n  \"total_price\": \"99.99\",\n  \"subtotal_price\": \"99.99\",\n  \"total_weight\": 0,\n  \"total_tax\": \"0.00\",\n  \"taxes_included\": false,\n  \"currency\": \"USD\",\n  \"financial_status\": \"pending\",\n  \"confirmed\": true,\n  \"total_discounts\": \"0.00\",\n  \"buyer_accepts_marketing\": true,\n  \"name\": \"#1001\",\n  \"referring_site\": null,\n  \"landing_site\": null,\n  \"cancelled_at\": null,\n  \"cancel_reason\": null,\n  \"total_line_items_price\": \"99.99\",\n  \"total_price_usd\": \"99.99\",\n  \"user_id\": null,\n  \"location_id\": null,\n  \"source_identifier\": null,\n  \"source_url\": null,\n  \"processed_at\": \"2024-01-15T10:30:00Z\",\n  \"device_id\": null,\n  \"phone\": null,\n  \"customer_locale\": \"en\",\n  \"app_id\": null,\n  \"browser_ip\": \"192.168.1.1\",\n  \"landing_site_ref\": null,\n  \"order_number\": 1001,\n  \"discount_applications\": [],\n  \"discount_codes\": [],\n  \"note_attributes\": [],\n  \"payment_gateway_names\": [\"shopify_payments\"],\n  \"processing_method\": \"direct\",\n  \"checkout_id\": 987654321,\n  \"source_name\": \"web\",\n  \"fulfillment_status\": null,\n  \"order_adjustments\": [],\n  \"line_items\": [\n    {\n      \"id\": 123456789,\n      \"variant_id\": 987654321,\n      \"title\": \"Test Product\",\n      \"quantity\": 1,\n      \"sku\": \"TEST-001\",\n      \"variant_title\": \"Default Title\",\n      \"vendor\": \"Test Vendor\",\n      \"fulfillment_service\": \"manual\",\n      \"product_id\": 123456789,\n      \"requires_shipping\": true,\n      \"taxable\": true,\n      \"gift_card\": false,\n      \"name\": \"Test Product - Default Title\",\n      \"variant_inventory_management\": \"shopify\",\n      \"properties\": [],\n      \"product_exists\": true,\n      \"fulfillable_quantity\": 1,\n      \"grams\": 0,\n      \"price\": \"99.99\",\n      \"total_discount\": \"0.00\",\n      \"fulfillment_status\": null,\n      \"price_set\": {\n        \"shop_money\": {\n          \"amount\": \"99.99\",\n          \"currency_code\": \"USD\"\n        },\n        \"presentment_money\": {\n          \"amount\": \"99.99\",\n          \"currency_code\": \"USD\"\n        }\n      },\n      \"total_discount_set\": {\n        \"shop_money\": {\n          \"amount\": \"0.00\",\n          \"currency_code\": \"USD\"\n        },\n        \"presentment_money\": {\n          \"amount\": \"0.00\",\n          \"currency_code\": \"USD\"\n        }\n      },\n      \"discount_allocations\": [],\n      \"duties\": [],\n      \"admin_graphql_api_id\": \"gid://shopify/LineItem/123456789\",\n      \"tax_lines\": []\n    }\n  ],\n  \"shipping_address\": {\n    \"first_name\": \"John\",\n    \"address1\": \"123 Main St\",\n    \"phone\": \"+1234567890\",\n    \"city\": \"New York\",\n    \"zip\": \"10001\",\n    \"province\": \"NY\",\n    \"country\": \"United States\",\n    \"last_name\": \"Doe\",\n    \"address2\": null,\n    \"company\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"name\": \"John Doe\",\n    \"country_code\": \"US\",\n    \"province_code\": \"NY\"\n  },\n  \"billing_address\": {\n    \"first_name\": \"John\",\n    \"address1\": \"123 Main St\",\n    \"phone\": \"+1234567890\",\n    \"city\": \"New York\",\n    \"zip\": \"10001\",\n    \"province\": \"NY\",\n    \"country\": \"United States\",\n    \"last_name\": \"Doe\",\n    \"address2\": null,\n    \"company\": null,\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"name\": \"John Doe\",\n    \"country_code\": \"US\",\n    \"province_code\": \"NY\"\n  },\n  \"customer\": {\n    \"id\": 123456789,\n    \"email\": \"customer@example.com\",\n    \"accepts_marketing\": true,\n    \"created_at\": \"2024-01-15T10:30:00Z\",\n    \"updated_at\": \"2024-01-15T10:30:00Z\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"orders_count\": 1,\n    \"state\": \"enabled\",\n    \"total_spent\": \"99.99\",\n    \"last_order_id\": 123456789,\n    \"note\": null,\n    \"verified_email\": true,\n    \"multipass_identifier\": null,\n    \"tax_exempt\": false,\n    \"phone\": \"+1234567890\",\n    \"tags\": \"vip\",\n    \"last_order_name\": \"#1001\",\n    \"currency\": \"USD\",\n    \"accepts_marketing_updated_at\": \"2024-01-15T10:30:00Z\",\n    \"marketing_opt_in_level\": null,\n    \"tax_exemptions\": [],\n    \"admin_graphql_api_id\": \"gid://shopify/Customer/123456789\",\n    \"default_address\": {\n      \"id\": 123456789,\n      \"customer_id\": 123456789,\n      \"first_name\": \"John\",\n      \"last_name\": \"Doe\",\n      \"company\": null,\n      \"address1\": \"123 Main St\",\n      \"address2\": null,\n      \"city\": \"New York\",\n      \"province\": \"NY\",\n      \"country\": \"United States\",\n      \"zip\": \"10001\",\n      \"phone\": \"+1234567890\",\n      \"name\": \"John Doe\",\n      \"province_code\": \"NY\",\n      \"country_code\": \"US\",\n      \"country_name\": \"United States\",\n      \"default\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/shopify/orders/create",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "shopify", "orders", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mitto DLR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Mitto-Hmac-Sha256",
+                "value": "test_hmac",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messageId\": \"msg_123456\",\n  \"status\": \"delivered\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"errorCode\": null,\n  \"errorMessage\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/mitto/dlr",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "mitto", "dlr"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mitto Inbound",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Mitto-Hmac-Sha256",
+                "value": "test_hmac",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"message\": \"STOP\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"messageId\": \"inbound_123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/mitto/inbound",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "mitto", "inbound"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Public Endpoints",
+      "item": [
+        {
+          "name": "Public Unsubscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Hmac-Sha256",
+                "value": "test_hmac",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"shop\": \"{{shop_domain}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/unsubscribe",
+              "host": ["{{base_url}}"],
+              "path": ["public", "unsubscribe"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Public Back in Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Shopify-Hmac-Sha256",
+                "value": "test_hmac",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"shop\": \"{{shop_domain}}\",\n  \"productId\": \"123456789\",\n  \"variantId\": \"987654321\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/back-in-stock",
+              "host": ["{{base_url}}"],
+              "path": ["public", "back-in-stock"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for OAuth requests",
+          "if (pm.request.url.query.has('timestamp') && pm.request.url.query.get('timestamp') === '{{$timestamp}}') {",
+          "    pm.request.url.query.set('timestamp', Math.floor(Date.now() / 1000).toString());",
+          "}"
+        ]
+      }
+    }
+  ]
+}
