@@ -44,6 +44,9 @@ import segmentsPreviewRouter from './routes/segments-preview.js';
 import shortlinksRouter from './routes/shortlinks.js';
 import discountPoolingRouter from './routes/discount-pooling.js';
 import campaignPreparationRouter from './routes/campaign-preparation.js';
+import adminSyncRouter from './routes/admin-sync.js';
+import adminSystemSegmentsRouter from './routes/admin-system-segments.js';
+import adminHealthShopifyRouter from './routes/admin-health-shopify.js';
 
 const app = express();
 
@@ -186,6 +189,9 @@ app.use(
 app.use('/s', rateLimitMiddleware(), shortlinksRouter);
 app.use('/discounts', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, discountPoolingRouter);
 app.use('/campaigns', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, campaignPreparationRouter);
+app.use('/admin/sync', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, adminSyncRouter);
+app.use('/admin/system-segments', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, adminSystemSegmentsRouter);
+app.use('/admin/health', rateLimitMiddleware(), jwtVerifyMiddleware, shopScopingMiddleware, adminHealthShopifyRouter);
 app.use('/queue', queueHealthRouter);
 app.use('/metrics', metricsRouter);
 

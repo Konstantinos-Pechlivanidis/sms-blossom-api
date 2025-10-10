@@ -27,7 +27,14 @@ function verifyShopifyHmac(req, res, next) {
     .update(body, 'utf8')
     .digest('base64');
 
-  if (calculatedHmac !== hmac) {
+  // @cursor:start(hmac-timing-fix)
+  // Use timing-safe comparison to prevent timing attacks
+  const calculatedBuffer = Buffer.from(calculatedHmac, 'base64');
+  const receivedBuffer = Buffer.from(hmac, 'base64');
+  
+  if (calculatedBuffer.length !== receivedBuffer.length || 
+      !crypto.timingSafeEqual(calculatedBuffer, receivedBuffer)) {
+  // @cursor:end(hmac-timing-fix)
     logger.warn({
       provided: hmac,
       calculated: calculatedHmac,

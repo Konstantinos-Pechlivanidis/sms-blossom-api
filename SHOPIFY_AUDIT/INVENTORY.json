@@ -1,0 +1,237 @@
+{
+  "files": [
+    "src/auth/oauth.js",
+    "src/auth/shop-webhooks.js", 
+    "src/middleware/verifyShopifyHmac.js",
+    "src/middleware/auth.js",
+    "src/middleware/shopScoping.js",
+    "src/services/shopify-graphql.js",
+    "src/services/shopify-customers-sync.js",
+    "src/services/discounts-service.js",
+    "src/services/consent.js",
+    "src/services/consent-unified.js",
+    "src/webhooks/shopify.js",
+    "src/webhooks/shopify-automations.js",
+    "src/webhooks/shopify-gdpr.js",
+    "src/webhooks/gdpr.js",
+    "src/webhooks/mitto-dlr.js",
+    "src/queue/processors/event.orders.paid.js",
+    "src/queue/processors/event.checkouts.update.js",
+    "src/queue/processors/discount-reservation.js",
+    "src/queue/processors/gdpr.js",
+    "src/routes/discounts.js",
+    "src/routes/admin-sync.js",
+    "src/routes/admin-system-segments.js",
+    "src/lib/appProxyVerify.js",
+    "src/config/env.js"
+  ],
+  "graphqlOps": [
+    {
+      "operation": "discountCodeBasicCreate",
+      "file": "src/services/shopify-graphql.js",
+      "version": "2025-10",
+      "purpose": "Create discount codes"
+    },
+    {
+      "operation": "discountCodeBasicUpdate", 
+      "file": "src/services/shopify-graphql.js",
+      "version": "2025-10",
+      "purpose": "Update discount codes"
+    },
+    {
+      "operation": "fetchExistingDiscounts",
+      "file": "src/services/shopify-graphql.js", 
+      "version": "2025-10",
+      "purpose": "Query existing discounts"
+    },
+    {
+      "operation": "bulkOperationRunQuery",
+      "file": "src/services/shopify-customers-sync.js",
+      "version": "2025-10", 
+      "purpose": "Bulk customer sync"
+    },
+    {
+      "operation": "currentBulkOperation",
+      "file": "src/services/shopify-customers-sync.js",
+      "version": "2025-10",
+      "purpose": "Poll bulk operation status"
+    },
+    {
+      "operation": "webhookSubscriptions",
+      "file": "src/auth/shop-webhooks.js",
+      "version": "2025-10",
+      "purpose": "List webhook subscriptions"
+    },
+    {
+      "operation": "webhookSubscriptionCreate",
+      "file": "src/auth/shop-webhooks.js", 
+      "version": "2025-10",
+      "purpose": "Create webhook subscriptions"
+    },
+    {
+      "operation": "webhookSubscriptionUpdate",
+      "file": "src/auth/shop-webhooks.js",
+      "version": "2025-10", 
+      "purpose": "Update webhook subscriptions"
+    },
+    {
+      "operation": "customerSmsMarketingConsentUpdate",
+      "file": "src/services/consent-unified.js",
+      "version": "2025-10",
+      "purpose": "Update customer SMS consent"
+    }
+  ],
+  "restOps": [
+    {
+      "endpoint": "POST /admin/oauth/access_token",
+      "file": "src/auth/oauth.js",
+      "purpose": "OAuth token exchange"
+    },
+    {
+      "endpoint": "GET /admin/oauth/authorize", 
+      "file": "src/auth/oauth.js",
+      "purpose": "OAuth authorization"
+    }
+  ],
+  "webhooks": [
+    {
+      "topic": "orders/create",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "New order notifications"
+    },
+    {
+      "topic": "orders/paid", 
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Payment confirmations"
+    },
+    {
+      "topic": "orders/fulfilled",
+      "handler": "src/webhooks/shopify.js", 
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Fulfillment notifications"
+    },
+    {
+      "topic": "fulfillments/create",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Fulfillment creation"
+    },
+    {
+      "topic": "fulfillments/update",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true, 
+      "idempotency": true,
+      "purpose": "Fulfillment updates"
+    },
+    {
+      "topic": "checkouts/create",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Checkout creation"
+    },
+    {
+      "topic": "checkouts/update",
+      "handler": "src/queue/processors/event.checkouts.update.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Abandoned checkout tracking"
+    },
+    {
+      "topic": "customers/create",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "New customer notifications"
+    },
+    {
+      "topic": "customers/update", 
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Customer updates"
+    },
+    {
+      "topic": "customers/marketing_consent_update",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Marketing consent changes"
+    },
+    {
+      "topic": "inventory_levels/update",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "Back-in-stock notifications"
+    },
+    {
+      "topic": "customers/data_request",
+      "handler": "src/webhooks/shopify-gdpr.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "GDPR data requests"
+    },
+    {
+      "topic": "customers/redact",
+      "handler": "src/webhooks/shopify-gdpr.js", 
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "GDPR customer redaction"
+    },
+    {
+      "topic": "shop/redact",
+      "handler": "src/webhooks/shopify-gdpr.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "GDPR shop redaction"
+    },
+    {
+      "topic": "app/uninstalled",
+      "handler": "src/webhooks/shopify.js",
+      "hmac": true,
+      "idempotency": true,
+      "purpose": "App uninstall cleanup"
+    }
+  ],
+  "bulkOps": [
+    {
+      "operation": "customers",
+      "file": "src/services/shopify-customers-sync.js",
+      "purpose": "Bulk customer sync with metafields",
+      "fallback": "paginated query"
+    }
+  ],
+  "oauth": {
+    "flow": "OAuth 2.0 Authorization Code",
+    "tokenStorage": "encrypted in database",
+    "tokenType": "offline tokens",
+    "scopes": "configured via SHOPIFY_SCOPES env var",
+    "stateValidation": true,
+    "hmacVerification": true,
+    "sessionCookies": {
+      "httpOnly": true,
+      "secure": "production only",
+      "sameSite": "lax",
+      "maxAge": "10 minutes"
+    }
+  },
+  "rateLimiting": {
+    "status": "not centralized",
+    "current": "no rate limiting wrapper",
+    "needed": "centralized client with cost-aware throttling"
+  },
+  "security": {
+    "hmacVerification": "implemented",
+    "rawBodyHandling": "implemented", 
+    "cors": "not explicitly configured",
+    "secrets": "env-based with fallbacks",
+    "oauth": "state validation + HMAC verification"
+  }
+}

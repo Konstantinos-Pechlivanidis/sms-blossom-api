@@ -4,6 +4,7 @@
 import { getPrismaClient } from '../db/prismaClient.js';
 import { renderGateQueueAndSend } from './messages.js';
 import { logAudit } from './audit.js';
+import { denormalizeContactAges } from './contacts-denormalize.js';
 
 const prisma = getPrismaClient();
 
@@ -212,6 +213,8 @@ export function startScheduler({ intervalMs = 15000 } = {}) {
             await executeGDPRCustomerRedactJob(job);
           } else if (job.type === 'gdpr_shop_redact') {
             await executeGDPRShopRedactJob(job);
+          } else if (job.type === 'contacts:denormalize:age') {
+            await executeContactsDenormalizeAgeJob(job);
           } else {
             // unknown job type → cancel
             await prisma.job.update({
@@ -260,4 +263,32 @@ export async function schedulerBoot() {
       runAt: { lt: cutoffDate },
     },
   });
+}
+
+/**
+ * Execute contacts age denormalization job
+ */
+async function executeContactsDenormalizeAgeJob(job) {
+  const { shopId, batchSize = 1000 } = job.payload;
+  
+  try {
+    const result = await denormalizeContactAges({ shopId, batchSize });
+    
+    await prisma.job.update({
+      where: { id: job.id },
+      data: { 
+        status: 'done',
+        payload: { ...job.payload, result }
+      },
+    });
+  } catch (error) {
+    await prisma.job.update({
+      where: { id: job.id },
+      data: { 
+        status: 'failed', 
+        lastError: String(error?.message || error) 
+      },
+    });
+    throw error;
+  }
 }

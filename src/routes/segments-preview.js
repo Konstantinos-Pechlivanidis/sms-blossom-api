@@ -49,6 +49,10 @@ router.post('/preview', async (req, res) => {
           createdAt: true,
           lastOrderAt: true,
           totalSpent: true,
+          gender: true,
+          ageYears: true,
+          conversionCount: true,
+          lastConvertedAt: true,
         },
       });
 
@@ -173,6 +177,10 @@ router.post('/preview/count', async (req, res) => {
           createdAt: true,
           lastOrderAt: true,
           totalSpent: true,
+          gender: true,
+          ageYears: true,
+          conversionCount: true,
+          lastConvertedAt: true,
         },
       });
 

@@ -4,6 +4,7 @@
 import { getPrismaClient } from '../../db/prismaClient.js';
 import { renderGateQueueAndSend } from '../../services/messages.js';
 import { cancelAbandonedCheckoutJobs } from '../../services/scheduler.js';
+import { updateContactConversion } from '../../services/contacts-denormalize.js';
 
 const prisma = getPrismaClient();
 
@@ -29,6 +30,10 @@ export async function processOrderPaid({ shopDomain: _shopDomain, shopId, payloa
   if (checkoutId) {
     await cancelAbandonedCheckoutJobs({ shopId, checkoutId: String(checkoutId) });
   }
+
+  // Update conversion tracking
+  const orderSubtotalCents = Math.round((payload?.subtotal_price || 0) * 100);
+  await updateContactConversion(contact.id, orderSubtotalCents);
 
   await renderGateQueueAndSend({
     shop,

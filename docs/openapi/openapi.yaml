@@ -55,6 +55,8 @@ tags:
     description: SMS template management and validation
   - name: Segments
     description: Customer segmentation and filtering
+  - name: Admin
+    description: Admin endpoints for sync and system management
   - name: Reports
     description: Analytics and reporting
   - name: Settings
@@ -1622,6 +1624,276 @@ paths:
                     items:
                       type: string
                     example: []
+
+  /admin/sync/customers:
+    post:
+      tags: [Admin]
+      summary: Sync customers from Shopify
+      description: Trigger customers sync from Shopify Admin API with metafields detection
+      operationId: syncCustomers
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shopDomain, accessToken]
+              properties:
+                shopDomain:
+                  type: string
+                  example: "mystore.myshopify.com"
+                accessToken:
+                  type: string
+                  example: "shpat_1234567890abcdef"
+                metafieldsConfig:
+                  type: object
+                  properties:
+                    namespaces:
+                      type: array
+                      items:
+                        type: string
+                      example: ["sms_blossom", "customer", "custom"]
+                    genderKeys:
+                      type: array
+                      items:
+                        type: string
+                      example: ["gender", "sex"]
+                    birthdateKeys:
+                      type: array
+                      items:
+                        type: string
+                      example: ["birthdate", "dob", "birthday"]
+      responses:
+        '200':
+          description: Sync started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Customers sync started"
+                  shopDomain:
+                    type: string
+                    example: "mystore.myshopify.com"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/sync/customers/status:
+    get:
+      tags: [Admin]
+      summary: Get sync status
+      description: Get customers sync status and statistics for a shop
+      operationId: getSyncStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shopDomain
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  shopDomain:
+                    type: string
+                    example: "mystore.myshopify.com"
+                  stats:
+                    type: object
+                    properties:
+                      totalContacts:
+                        type: integer
+                        example: 1500
+                      contactsWithGender:
+                        type: integer
+                        example: 1200
+                      contactsWithAge:
+                        type: integer
+                        example: 800
+                      contactsWithConversion:
+                        type: integer
+                        example: 300
+                      genderPercentage:
+                        type: integer
+                        example: 80
+                      agePercentage:
+                        type: integer
+                        example: 53
+                      conversionPercentage:
+                        type: integer
+                        example: 20
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/system-segments/refresh:
+    post:
+      tags: [Admin]
+      summary: Refresh system segments
+      description: Create or update all system segments for a shop
+      operationId: refreshSystemSegments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shopDomain]
+              properties:
+                shopDomain:
+                  type: string
+                  example: "mystore.myshopify.com"
+      responses:
+        '200':
+          description: System segments refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "System segments refreshed"
+                  shopDomain:
+                    type: string
+                    example: "mystore.myshopify.com"
+                  result:
+                    type: object
+                    properties:
+                      created:
+                        type: integer
+                        example: 8
+                      updated:
+                        type: integer
+                        example: 0
+                      errors:
+                        type: integer
+                        example: 0
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/system-segments:
+    get:
+      tags: [Admin]
+      summary: Get system segments
+      description: Get all system segments for a shop
+      operationId: getSystemSegments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shopDomain
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Shopify shop domain
+      responses:
+        '200':
+          description: System segments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  shopDomain:
+                    type: string
+                    example: "mystore.myshopify.com"
+                  segments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SystemSegment'
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Admin]
+      summary: Delete system segments
+      description: Delete all system segments for a shop
+      operationId: deleteSystemSegments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shopDomain]
+              properties:
+                shopDomain:
+                  type: string
+                  example: "mystore.myshopify.com"
+      responses:
+        '200':
+          description: System segments deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "System segments deleted"
+                  shopDomain:
+                    type: string
+                    example: "mystore.myshopify.com"
+                  deletedCount:
+                    type: integer
+                    example: 8
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /reports/overview:
     get:
@@ -3289,6 +3561,157 @@ components:
           type: string
           nullable: true
           example: "https://shop.myshopify.com/checkouts/123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    # System Segments
+    SystemSegment:
+      type: object
+      required: [id, name, slug, filterJson, isSystem]
+      properties:
+        id:
+          type: string
+          example: "seg_123"
+        name:
+          type: string
+          example: "Male Customers"
+        slug:
+          type: string
+          example: "male"
+        filterJson:
+          type: object
+          example:
+            gender: "male"
+        isSystem:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    # Enhanced Contact with new fields
+    Contact:
+      type: object
+      required: [id, shopId, phoneE164, gender, conversionCount, conversionLtvCents]
+      properties:
+        id:
+          type: string
+          example: "contact_123"
+        shopId:
+          type: string
+          example: "shop_123"
+        customerId:
+          type: string
+          nullable: true
+          example: "gid://shopify/Customer/123456789"
+        phoneE164:
+          type: string
+          example: "+1234567890"
+        firstName:
+          type: string
+          nullable: true
+          example: "John"
+        lastName:
+          type: string
+          nullable: true
+          example: "Doe"
+        email:
+          type: string
+          nullable: true
+          example: "john@example.com"
+        gender:
+          type: string
+          enum: [male, female, unknown]
+          example: "male"
+        birthdate:
+          type: string
+          format: date-time
+          nullable: true
+          example: "1990-01-15T00:00:00Z"
+        ageYears:
+          type: integer
+          nullable: true
+          example: 34
+        conversionCount:
+          type: integer
+          minimum: 0
+          example: 3
+        lastConvertedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        conversionLtvCents:
+          type: integer
+          minimum: 0
+          example: 15000
+        optedOut:
+          type: boolean
+          example: false
+        smsConsentState:
+          type: string
+          enum: [opted_in, opted_out, unknown]
+          example: "opted_in"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    # Enhanced Segment with system fields
+    Segment:
+      type: object
+      required: [id, name, filterJson, isSystem, createdAt, updatedAt, shopId]
+      properties:
+        id:
+          type: string
+          description: Segment ID
+          example: "seg_123456"
+        name:
+          type: string
+          description: Segment name
+          example: "VIP Customers"
+        filterJson:
+          type: object
+          description: Segment filter DSL
+          example:
+            and:
+              - consent: "opted_in"
+              - tags:
+                  has: "vip"
+        lastMaterializedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last materialization time
+          example: "2024-01-15T10:30:00Z"
+        isSystem:
+          type: boolean
+          description: Whether this is a system segment
+          example: false
+        slug:
+          type: string
+          nullable: true
+          description: System segment slug
+          example: "male"
+        shopId:
+          type: string
+          description: Shop ID
+          example: "shop_123"
         createdAt:
           type: string
           format: date-time

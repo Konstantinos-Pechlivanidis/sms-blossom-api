@@ -14,6 +14,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  male
+  female
+  unknown
+}
+
 model Shop {
   id           String   @id @default(cuid())
   createdAt    DateTime @default(now())
@@ -76,6 +82,14 @@ model Contact {
   // Sprint D: mark welcome sent once
   welcomedAt       DateTime?
 
+  // Gender, age, and conversion tracking
+  gender           Gender   @default(unknown)
+  birthdate        DateTime?
+  ageYears         Int?
+  conversionCount  Int      @default(0)
+  lastConvertedAt  DateTime?
+  conversionLtvCents Int    @default(0)
+
   Message    Message[]
   backInStockInterests BackInStockInterest[]
   campaignRecipients CampaignRecipient[]
@@ -86,6 +100,9 @@ model Contact {
   @@index([shopId, email])
   @@index([shopId, phone_hash])
   @@index([shopId, email_hash])
+  @@index([shopId, gender])
+  @@index([shopId, ageYears])
+  @@index([shopId, lastConvertedAt])
 }
 
 model Event {
@@ -244,6 +261,8 @@ model Segment {
   name               String
   filterJson         Json     // DSL like {and:[{consent:'opted_in'},{tags:{has:'vip'}}]}
   lastMaterializedAt DateTime?
+  isSystem           Boolean  @default(false)
+  slug               String?  @unique
 
   @@index([shopId, updatedAt])
 }

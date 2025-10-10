@@ -12,6 +12,9 @@ const prisma = getPrismaClient();
  *  { consent: 'opted_in'|'opted_out'|'unknown' }
  *  { tag: 'vip' } or { tags: { has: 'vip' } }  (expects Contact.tagsJson = string[])
  *  { locale: 'el' } / { locale: { in: ['el','en'] } }
+ *  { gender: 'male'|'female'|'unknown' }
+ *  { ageYears: { gte: 18, lte: 65 } }
+ *  { conversion: { minCount: 1, lastNDays: 90 } }
  *  { not: {...} }, { and:[...]} , { or:[...] }
  */
 export function dslToWhere(dsl) {
@@ -39,6 +42,31 @@ export function dslToWhere(dsl) {
       AND.push({ optedOut: !!v });
     } else if (k === 'phoneStartsWith') {
       AND.push({ phoneE164: { startsWith: String(v) } });
+    } else if (k === 'gender') {
+      AND.push({ gender: String(v) });
+    } else if (k === 'ageYears') {
+      if (typeof v === 'object' && v !== null) {
+        const ageCondition = {};
+        if (v.gte !== undefined) ageCondition.gte = Number(v.gte);
+        if (v.lte !== undefined) ageCondition.lte = Number(v.lte);
+        if (v.gt !== undefined) ageCondition.gt = Number(v.gt);
+        if (v.lt !== undefined) ageCondition.lt = Number(v.lt);
+        if (v.equals !== undefined) ageCondition.equals = Number(v.equals);
+        AND.push({ ageYears: ageCondition });
+      } else {
+        AND.push({ ageYears: Number(v) });
+      }
+    } else if (k === 'conversion') {
+      if (typeof v === 'object' && v !== null) {
+        if (v.minCount !== undefined) {
+          AND.push({ conversionCount: { gte: Number(v.minCount) } });
+        }
+        if (v.lastNDays !== undefined) {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - Number(v.lastNDays));
+          AND.push({ lastConvertedAt: { gte: cutoffDate } });
+        }
+      }
     }
   }
 
@@ -77,6 +105,30 @@ export async function evaluateSegmentFilter(contact, filter) {
         }
         if (condition.phoneE164 && condition.phoneE164.startsWith) {
           if (!contact.phoneE164?.startsWith(condition.phoneE164.startsWith)) {
+            return false;
+          }
+        }
+        if (condition.gender && contact.gender !== condition.gender) {
+          return false;
+        }
+        if (condition.ageYears) {
+          if (typeof condition.ageYears === 'object') {
+            const age = contact.ageYears;
+            if (age === null || age === undefined) return false;
+            if (condition.ageYears.gte !== undefined && age < condition.ageYears.gte) return false;
+            if (condition.ageYears.lte !== undefined && age > condition.ageYears.lte) return false;
+            if (condition.ageYears.gt !== undefined && age <= condition.ageYears.gt) return false;
+            if (condition.ageYears.lt !== undefined && age >= condition.ageYears.lt) return false;
+            if (condition.ageYears.equals !== undefined && age !== condition.ageYears.equals) return false;
+          } else {
+            if (contact.ageYears !== condition.ageYears) return false;
+          }
+        }
+        if (condition.conversionCount && contact.conversionCount < condition.conversionCount) {
+          return false;
+        }
+        if (condition.lastConvertedAt) {
+          if (!contact.lastConvertedAt || contact.lastConvertedAt < condition.lastConvertedAt) {
             return false;
           }
         }
